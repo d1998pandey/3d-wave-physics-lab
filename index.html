@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive 3D Wave Physics Laboratory</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  :root {
+    --bg-dark: #050811;
+    --panel-bg: rgba(11, 17, 30, 0.95);
+    --panel-border: #223252;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent: #00d2ff;
+    --accent-sec: #a855f7;
+    --wave1-col: #00d2ff;
+    --wave2-col: #ffbe0b;
+    --res-col: #00f59b;
+    --part-col: #ff4d6d;
+    --card-bg: #080d18;
+    --header-bg: #090e1a;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body.day-mode {
+    --bg-dark: #eef4fb;
+    --panel-bg: rgba(255, 255, 255, 0.96);
+    --panel-border: #cbd5e1;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --accent: #0284c7;
+    --accent-sec: #7c3aed;
+    --wave1-col: #0284c7;
+    --wave2-col: #d97706;
+    --res-col: #059669;
+    --part-col: #e11d48;
+    --card-bg: #f8fafc;
+    --header-bg: #f1f5f9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header & Module Tabs */
+  header {
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 6px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 35;
+    flex-shrink: 0;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--accent);
+  }
+  .brand span.sub {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 11.5px;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .nav-tabs::-webkit-scrollbar { height: 4px; }
+  .nav-tabs::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+  .tab-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text-main); border-color: var(--accent); }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .btn-sm {
+    background: var(--card-bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-main);
+    padding: 4px 9px;
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm.active-toggle {
+    background: rgba(0, 210, 255, 0.18);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Main Workspace */
+  .app-body {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+  #canvas-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* Slide-Out Drawers */
+  .left-drawer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 305px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: 6px 0 24px rgba(0,0,0,0.35);
+    transition: transform 0.25s ease;
+  }
+  .left-drawer.closed { transform: translateX(-100%); }
+
+  .right-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 350px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: -6px 0 24px rgba(0,0,0,0.35);
+    transition: transform 0.25s ease;
+  }
+  .right-drawer.closed { transform: translateX(100%); }
+
+  .bottom-drawer {
+    position: absolute;
+    left: 305px;
+    right: 350px;
+    bottom: 0;
+    height: 225px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--panel-border);
+    z-index: 18;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s ease, left 0.25s, right 0.25s;
+  }
+  .bottom-drawer.closed { transform: translateY(100%); }
+  .bottom-drawer.expand-left { left: 0; }
+  .bottom-drawer.expand-right { right: 0; }
+
+  /* Drawer Handle Tabs */
+  .drawer-tab-left {
+    position: absolute;
+    top: 45%;
+    left: 305px;
+    transform: translateY(-50%);
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    border-left: none;
+    color: var(--accent);
+    padding: 10px 6px;
+    border-radius: 0 7px 7px 0;
+    cursor: pointer;
+    z-index: 25;
+    writing-mode: vertical-rl;
+    font-size: 10.5px;
+    font-weight: 700;
+    transition: left 0.25s ease;
+    user-select: none;
+  }
+  .drawer-tab-left.closed { left: 0; }
+
+  .drawer-tab-right {
+    position: absolute;
+    top: 45%;
+    right: 350px;
+    transform: translateY(-50%);
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    border-right: none;
+    color: var(--accent);
+    padding: 10px 6px;
+    border-radius: 7px 0 0 7px;
+    cursor: pointer;
+    z-index: 25;
+    writing-mode: vertical-rl;
+    font-size: 10.5px;
+    font-weight: 700;
+    transition: right 0.25s ease;
+    user-select: none;
+  }
+  .drawer-tab-right.closed { right: 0; }
+
+  .drawer-tab-bottom {
+    position: absolute;
+    bottom: 225px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    border-bottom: none;
+    color: var(--accent);
+    padding: 4px 14px;
+    border-radius: 7px 7px 0 0;
+    cursor: pointer;
+    z-index: 25;
+    font-size: 10.5px;
+    font-weight: 700;
+    transition: bottom 0.25s ease;
+    user-select: none;
+  }
+  .drawer-tab-bottom.closed { bottom: 0; }
+
+  .panel-sec {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .sec-title {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Compact Sliders & Selectors */
+  .slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 9px;
+  }
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .slider-head span.val {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 5px;
+    cursor: pointer;
+  }
+  select, input[type="text"] {
+    background: var(--card-bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-main);
+    padding: 6px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    width: 100%;
+    margin-bottom: 8px;
+    outline: none;
+    font-family: var(--font-mono);
+  }
+  .chk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .chk-lbl {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    cursor: pointer;
+  }
+
+  /* Structured Physics Tables */
+  .phys-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    background: var(--card-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .phys-table th, .phys-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--panel-border);
+    text-align: left;
+  }
+  .phys-table th {
+    background: rgba(0, 210, 255, 0.1);
+    color: var(--accent);
+    font-size: 10.5px;
+    text-transform: uppercase;
+  }
+  .phys-table td.num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .formula-box {
+    background: var(--card-bg);
+    border-left: 3px solid var(--accent);
+    padding: 6px 9px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.45;
+    margin-bottom: 6px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .top-cam-bar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(8px);
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    z-index: 15;
+    align-items: center;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  /* Bottom Synchronized Graph + Phasor Circle Layout */
+  .bottom-layout {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 12px;
+    padding: 10px 14px;
+    overflow: hidden;
+  }
+  .graph-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  #wave-graph-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand">
+      <span>INTERACTIVE 3D WAVE PHYSICS LABORATORY</span>
+      <span class="sub">Particle Tracking, Phasors, Superposition, Standing Waves, Polarization, Diffraction &amp; Doppler</span>
+    </div>
+    <div style="display:flex; gap:5px; align-items:center;">
+      <button class="btn-sm active-toggle" id="btn-level" onclick="toggleLevelMode()">Level: Advanced Mode</button>
+      <button class="btn-sm" id="btn-theme" onclick="toggleDayNight()">☀️ Day / Light</button>
+      <button class="btn-sm active-toggle" id="btn-left-d" onclick="toggleDrawer('left')">◧ Setup</button>
+      <button class="btn-sm active-toggle" id="btn-right-d" onclick="toggleDrawer('right')">◨ Controls &amp; Table</button>
+      <button class="btn-sm active-toggle" id="btn-bottom-d" onclick="toggleDrawer('bottom')">◫ Live Graph</button>
+      <button class="btn-sm" onclick="resetCurrentModule()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- 10 Comprehensive Wave Modules -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="tab-whatis" onclick="selectModule('whatis')">1. What is a Wave &amp; Particle Tracker</button>
+    <button class="tab-btn" id="tab-trans_long" onclick="selectModule('trans_long')">2. Transverse vs Longitudinal</button>
+    <button class="tab-btn" id="tab-params" onclick="selectModule('params')">3. Wave Parameters (v = fλ)</button>
+    <button class="tab-btn" id="tab-phase" onclick="selectModule('phase')">4. Phase &amp; Phasor Lab</button>
+    <button class="tab-btn" id="tab-superpos" onclick="selectModule('superpos')">5. Superposition &amp; Beats</button>
+    <button class="tab-btn" id="tab-standing" onclick="selectModule('standing')">6. Standing Waves &amp; Pipes</button>
+    <button class="tab-btn" id="tab-polar" onclick="selectModule('polar')">7. EM Polarization &amp; Malus's Law</button>
+    <button class="tab-btn" id="tab-diffract" onclick="selectModule('diffract')">8. Wavefronts &amp; Diffraction</button>
+    <button class="tab-btn" id="tab-doppler_disp" onclick="selectModule('doppler_disp')">9. Doppler, Boundary &amp; Dispersion</button>
+    <button class="tab-btn" id="tab-custom_quiz" onclick="selectModule('custom_quiz')">10. Custom Equation &amp; Challenges</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- LEFT DRAWER: DIMENSION SWITCH, TRACKED PARTICLE & OVERLAYS -->
+  <aside class="left-drawer" id="left-drawer">
+    <div class="panel-sec">
+      <div class="sec-title"><span>Visualization Dimension</span></div>
+      <div style="display:flex; gap:5px; margin-bottom:6px;">
+        <button class="btn-sm" id="dim-1d" style="flex:1;" onclick="setWaveDimension('1D')">1D String</button>
+        <button class="btn-sm" id="dim-2d" style="flex:1;" onclick="setWaveDimension('2D')">2D Surface</button>
+        <button class="btn-sm active-toggle" id="dim-3d" style="flex:1;" onclick="setWaveDimension('3D')">3D Space</button>
+      </div>
+      <label style="font-size:11px; color:var(--text-muted);">Propagation Direction:</label>
+      <select id="sel-prop-dir" onchange="state.propSign=parseInt(this.value); renderFrame(0)">
+        <option value="1" selected>+x Direction: y = A sin(kx − ωt + φ)</option>
+        <option value="-1">−x Direction: y = A sin(kx + ωt + φ)</option>
+      </select>
+    </div>
+
+    <!-- Priority Feature 1: Particle Tracking Inspector -->
+    <div class="panel-sec">
+      <div class="sec-title">
+        <span>Particle Tracker (SHM vs Wave)</span>
+        <span style="color:var(--part-col);">● Tracked</span>
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Tracked Particle Position (x₀)</span><span class="val" id="lbl-track-x">0.0 m</span></div>
+        <input type="range" min="-6" max="6" step="0.5" value="0" oninput="state.trackX=parseFloat(this.value); document.getElementById('lbl-track-x').textContent=state.trackX.toFixed(1)+' m'; renderFrame(0)">
+      </div>
+      <div class="chk-grid">
+        <label class="chk-lbl"><input type="checkbox" id="chk-part-vel" checked onchange="renderFrame(0)"> Particle Vel (v_y)</label>
+        <label class="chk-lbl"><input type="checkbox" id="chk-part-acc" onchange="renderFrame(0)"> Particle Acc (a_y)</label>
+        <label class="chk-lbl"><input type="checkbox" id="chk-wave-crest" checked onchange="renderFrame(0)"> Phase Crest Tracker</label>
+        <label class="chk-lbl"><input type="checkbox" id="chk-energy-flow" checked onchange="renderFrame(0)"> Energy Packets</label>
+      </div>
+    </div>
+
+    <!-- Understand Section: Core Concept Summary -->
+    <div class="panel-sec" style="border-bottom:none;">
+      <div class="sec-title"><span>3. Understand the Physics</span></div>
+      <div id="left-concept-card" class="formula-box" style="font-family:var(--font-sans);">
+        <strong>Particle vs. Wave Velocity:</strong> The red tracked particle oscillates strictly up-and-down in Simple Harmonic Motion ($v_y = \partial y/\partial t$) around its fixed equilibrium $x_0$, while the wave disturbance and energy propagate horizontally at speed $v = \omega/k = f\lambda$.
+      </div>
+    </div>
+  </aside>
+
+  <div class="drawer-tab-left" id="tab-left" onclick="toggleDrawer('left')">◀ SETUP</div>
+
+  <!-- CENTER 3D SIMULATION CANVAS -->
+  <main id="canvas-container"></main>
+
+  <!-- TOP FLOATING TRANSPORT & CAMERA BAR -->
+  <div class="top-cam-bar">
+    <button class="btn-sm active-toggle" id="btn-play" onclick="togglePlay()">⏸ Pause</button>
+    <button class="btn-sm" id="btn-slow" onclick="toggleSlowMo()">🐢 Slow-Mo (0.2×)</button>
+    <button class="btn-sm" onclick="stepTime(0.08)">+Δt Step</button>
+    <span style="color:#64748b;">|</span>
+    <button class="btn-sm" onclick="setCameraPreset('front2d')">📐 Front 2D View</button>
+    <button class="btn-sm" onclick="setCameraPreset('iso3d')">🧊 3D Isometric</button>
+    <button class="btn-sm" onclick="setCameraPreset('top')">Top View</button>
+  </div>
+
+  <div class="drawer-tab-right" id="tab-right" onclick="toggleDrawer('right')">CONTROLS &amp; TABLE ▶</div>
+
+  <!-- RIGHT DRAWER: FOCUSED EXPERIMENT SLIDERS + STRUCTURED PHYSICS TABLE -->
+  <aside class="right-drawer" id="right-drawer">
+    <div class="panel-sec" id="focused-controls-sec"></div>
+    <div class="panel-sec" id="live-table-sec" style="border-bottom:none;"></div>
+  </aside>
+
+  <div class="drawer-tab-bottom" id="tab-bottom" onclick="toggleDrawer('bottom')">▼ SYNCHRONIZED GRAPH &amp; PHASOR</div>
+
+  <!-- BOTTOM DRAWER: SYNCHRONIZED MULTI-MODE GRAPH + PHASOR CIRCLE -->
+  <section class="bottom-drawer" id="bottom-drawer">
+    <div class="bottom-layout">
+      <div style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="sec-title"><span>Synchronized Plot Mode</span></div>
+          <select id="sel-graph-mode" onchange="state.graphMode=this.value; drawBottomWaveGraph()">
+            <option value="y_vs_x" selected>1. Displacement y(x) vs Position x</option>
+            <option value="y_vs_t">2. Tracked Particle y(x₀, t) vs Time t</option>
+            <option value="va_vs_t">3. Particle Velocity v_y &amp; Accel a_y vs t</option>
+            <option value="pressure_vs_x">4. Acoustic Pressure ΔP(x) vs Position x</option>
+            <option value="intensity">5. Intensity I ∝ A² / Diffraction Pattern</option>
+          </select>
+          <p style="font-size:10.5px; color:var(--text-muted); line-height:1.38;">
+            Click anywhere along the horizontal graph axis to move the red Tracked Particle $x_0$ directly to that location!
+          </p>
+        </div>
+        <button class="btn-sm" id="btn-audio-beats" style="display:none; width:100%; border-color:var(--res-col); color:var(--res-col);" onclick="toggleAudioSound()">🔊 Play Audible Sound / Beats</button>
+      </div>
+      <div class="graph-wrapper">
+        <canvas id="wave-graph-canvas"></canvas>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============================================================================
+   1. GLOBAL WAVE PHYSICS STATE (COUPLED & PHYSICALLY CONSISTENT)
+   ============================================================================ */
+const state = {
+  module: 'whatis',          // 'whatis'|'trans_long'|'params'|'phase'|'superpos'|'standing'|'polar'|'diffract'|'doppler_disp'|'custom_quiz'
+  dimMode: '3D',             // '1D' | '2D' | '3D'
+  advancedMode: true,
+  dayMode: false,
+  running: true,
+  slowMo: false,
+  t: 0,
+  propSign: 1,               // +1 for +x (kx - ωt), -1 for -x (kx + ωt)
+
+  // Core Coupled Wave 1 Parameters
+  A: 1.5,                    // Amplitude (m)
+  f: 0.6,                    // Frequency (Hz)
+  v: 3.6,                    // Wave propagation speed in medium (m/s) -> λ = v / f = 6.0 m
+  phi1Deg: 0,                // Phase constant φ₁ (deg)
+  coupleConstraint: 'v_fixed', // 'v_fixed' (changing f updates λ) | 'f_fixed' (changing v updates λ)
+
+  // Initial snapshot for Module 3 Parameter Comparison Table
+  initialSnap: { A: 1.5, f: 0.6, v: 3.6, lam: 6.0, T: 1.67, omega: 3.77, k: 1.05 },
+
+  // Tracked Particle x0
+  trackX: 0.0,
+
+  // Module 2: Transverse vs Longitudinal submode
+  tlSubmode: 'both',         // 'transverse' | 'longitudinal' | 'both'
+
+  // Module 4 & 5: Wave 2 Parameters (for Phase Difference, Superposition & Beats)
+  A2: 1.5,
+  f2: 0.6,
+  phi2Deg: 90,               // Phase difference Δφ = phi2Deg - phi1Deg
+  superSubmode: 'interfere', // 'interfere' | 'beats'
+
+  // Module 6: Standing Waves (String, Open Pipe, Closed Pipe)
+  standType: 'string',       // 'string' | 'open_pipe' | 'closed_pipe'
+  harmonicN: 3,              // Harmonic mode n (1, 2, 3, 4, 5...)
+  stringLen: 12.0,
+
+  // Module 7: EM Wave Polarization & Malus's Law
+  polType: 'linear',         // 'linear' | 'circular' | 'elliptical' | 'unpolarized'
+  polAngle1Deg: 0,
+  polAngle2Deg: 45,
+  useMiddlePolarizer: false,
+  polAngleMidDeg: 45,
+
+  // Module 8: Plane/Spherical Wavefronts & Single-Slit Diffraction
+  wavefrontType: 'diffract', // 'plane3d' | 'spherical3d' | 'diffract'
+  slitWidthA: 2.2,
+
+  // Module 9: Doppler Effect, Medium Reflection/Refraction & Dispersion Wave Packet
+  advTopic: 'doppler',       // 'doppler' | 'boundary' | 'dispersion'
+  dopplerVs: 1.4,            // Source speed v_s
+  dopplerVo: 0.0,            // Observer speed v_o
+  dispGroupRatio: 0.55,      // v_g / v_p ratio
+  boundaryV2: 1.8,           // Speed in second medium for wave reflection/transmission
+
+  // Module 10: Custom Safe Equation & Student Challenges
+  customEqStr: '2.0*sin(1.2*x - 3.5*t) + 0.8*cos(2.4*x - 7.0*t)',
+  challengeIdx: 0,
+  challengeScore: 0,
+
+  // Graph & Audio state
+  graphMode: 'y_vs_x',
+  audioCtx: null,
+  osc1: null,
+  osc2: null,
+  audioPlaying: false
+};
+
+// Coupled parameter getters
+function getLambda() { return state.v / Math.max(0.05, state.f); }
+function getPeriod() { return 1 / Math.max(0.05, state.f); }
+function getOmega() { return 2 * Math.PI * state.f; }
+function getWaveNumK() { return (2 * Math.PI) / getLambda(); }
+function degToRad(d) { return (d * Math.PI) / 180; }
+
+/* ============================================================================
+   2. SAFE MATHEMATICAL WAVE EXPRESSION EVALUATOR (MODULE 10)
+   Supports expressions like "2*sin(1.5*x - 3*t) + cos(3*x + 2*t + pi/4)"
+   ============================================================================ */
+function evaluateCustomWave(exprStr, xVal, tVal) {
+  try {
+    let s = String(exprStr).trim()
+      .replace(/−/g, '-')
+      .replace(/\bpi\b|π/gi, 'Math.PI')
+      .replace(/\bsin\s*\(/gi, 'Math.sin(')
+      .replace(/\bcos\s*\(/gi, 'Math.cos(')
+      .replace(/\bsqrt\s*\(/gi, 'Math.sqrt(')
+      .replace(/\bexp\s*\(/gi, 'Math.exp(')
+      .replace(/\^/g, '**');
+    if (!/^[0-9.+\-*/(),\sxtMathPIsincosqrtexp**]+$/.test(s)) return 0;
+    const fn = new Function('x', 't', `"use strict"; return (${s});`);
+    const v = fn(xVal, tVal);
+    return (typeof v === 'number' && isFinite(v)) ? v : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
+/* ============================================================================
+   3. THREE.JS 3D SCENE INITIALIZATION & PRIMITIVES
+   ============================================================================ */
+let scene, camera, renderer, controls;
+let waveGroup, axesGroup, labelsGroup;
+
+function makeTextSprite(text, colorStr = '#f8fafc', scale = 1.0) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 340;
+  canvas.height = 90;
+  const ctx = canvas.getContext('2d');
+  ctx.font = 'bold 33px Inter, Consolas, sans-serif';
+  ctx.strokeStyle = state.dayMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 8, 17, 0.92)';
+  ctx.lineWidth = 7;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.strokeText(text, 170, 45);
+  ctx.fillStyle = state.dayMode && colorStr === '#f8fafc' ? '#0f172a' : colorStr;
+  ctx.fillText(text, 170, 45);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(2.4 * scale, 0.64 * scale, 1);
+  sp.renderOrder = 30;
+  return sp;
+}
+
+function initThreeJS() {
+  const container = document.getElementById('canvas-container');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050811);
+
+  camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 500);
+  camera.position.set(0, 3.8, 17.5);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+  const dl1 = new THREE.DirectionalLight(0xffffff, 0.8);
+  dl1.position.set(12, 18, 14);
+  scene.add(dl1);
+
+  axesGroup = new THREE.Group();
+  waveGroup = new THREE.Group();
+  labelsGroup = new THREE.Group();
+  scene.add(axesGroup, waveGroup, labelsGroup);
+
+  buildReferenceAxes();
+  initGraphClickEvents();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    drawBottomWaveGraph();
+  });
+}
+
+function clearGroup(grp) {
+  while (grp.children.length > 0) {
+    const c = grp.children[0];
+    grp.remove(c);
+    if (c.geometry) c.geometry.dispose();
+  }
+}
+
+function buildReferenceAxes() {
+  clearGroup(axesGroup);
+  const L = 7.5;
+  const axCol = state.dayMode ? 0x64748b : 0x334155;
+  axesGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-L, 0, 0), new THREE.Vector3(L, 0, 0)]),
+    new THREE.LineBasicMaterial({ color: axCol })
+  ));
+  axesGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -3.5, 0), new THREE.Vector3(0, 3.5, 0)]),
+    new THREE.LineBasicMaterial({ color: axCol })
+  ));
+  const grid = new THREE.GridHelper(15, 15, state.dayMode ? 0xcbd5e1 : 0x1e293b, state.dayMode ? 0xe2e8f0 : 0x0f172a);
+  grid.position.y = -3.0;
+  axesGroup.add(grid);
+}
+
+/* ============================================================================
+   4. 3D WAVE RENDERERS FOR ALL 10 MODULES
+   ============================================================================ */
+function renderFrame(dt) {
+  if (state.running) {
+    state.t += dt * (state.slowMo ? 0.2 : 1.0);
+  }
+
+  clearGroup(waveGroup);
+  clearGroup(labelsGroup);
+
+  const mod = state.module;
+  if (mod === 'whatis' || mod === 'params' || (mod === 'custom_quiz' && state.dimMode === '1D')) {
+    renderSingleProgressiveWave3D();
+  } else if (mod === 'trans_long') {
+    renderTransverseAndLongitudinal3D();
+  } else if (mod === 'phase' || mod === 'superpos') {
+    renderTwoWaveSuperposition3D();
+  } else if (mod === 'standing') {
+    renderStandingWavesAndPipes3D();
+  } else if (mod === 'polar') {
+    renderEMPolarizationAndMalus3D();
+  } else if (mod === 'diffract') {
+    renderWavefrontsAndDiffraction3D();
+  } else if (mod === 'doppler_disp') {
+    renderDopplerBoundaryDispersion3D();
+  } else if (mod === 'custom_quiz') {
+    renderCustomEquationWave3D();
+  }
+
+  buildRightLiveTable();
+  drawBottomWaveGraph();
+}
+
+// Helper: Draw a 3D Particle Bead Chain + Smooth Tube + Tracked Particle x0
+function drawBeadWave3D(evalYFn, zOffset, colorHex, showTracked = true) {
+  const L = 6.5;
+  const pts = [];
+  const N = 130;
+  for (let i = 0; i <= N; i++) {
+    const x = -L + (2 * L * i) / N;
+    const y = evalYFn(x);
+    pts.push(new THREE.Vector3(x, y, zOffset));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const tube = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 120, 0.045, 8, false),
+    new THREE.MeshPhongMaterial({ color: colorHex, shininess: 60 })
+  );
+  waveGroup.add(tube);
+
+  // Discrete medium particles every 0.5 m
+  const sphereGeo = new THREE.SphereGeometry(0.11, 14, 14);
+  const sphereMat = new THREE.MeshPhongMaterial({ color: colorHex });
+  for (let x = -6.0; x <= 6.01; x += 0.5) {
+    if (showTracked && Math.abs(x - state.trackX) < 0.1) continue;
+    const m = new THREE.Mesh(sphereGeo, sphereMat);
+    m.position.set(x, evalYFn(x), zOffset);
+    waveGroup.add(m);
+  }
+
+  // Highlighted Tracked Particle at x = state.trackX (Priority Feature 1)
+  if (showTracked) {
+    const tx = state.trackX;
+    const ty = evalYFn(tx);
+    const h = 1e-3;
+    const vy = (evalYFn(tx, state.t + h) - evalYFn(tx, state.t - h)) / (2 * h);
+    const ay = (evalYFn(tx, state.t + h) - 2 * ty + evalYFn(tx, state.t - h)) / (h * h);
+
+    // Vertical equilibrium guide line at x = tx
+    const guideGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(tx, -state.A * 1.4, zOffset),
+      new THREE.Vector3(tx, state.A * 1.4, zOffset)
+    ]);
+    waveGroup.add(new THREE.Line(guideGeo, new THREE.LineDashedMaterial({ color: 0xff4d6d, dashSize: 0.2, gapSize: 0.15 })));
+
+    const tMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
+    tMesh.position.set(tx, ty, zOffset);
+    waveGroup.add(tMesh);
+
+    const lbl = makeTextSprite(`Tracked P(x₀=${tx.toFixed(1)}m)`, '#ff4d6d', 0.8);
+    lbl.position.set(tx, state.A + 0.75, zOffset);
+    labelsGroup.add(lbl);
+
+    if (document.getElementById('chk-part-vel').checked && Math.abs(vy) > 0.05) {
+      const vDir = new THREE.Vector3(0, Math.sign(vy), 0);
+      waveGroup.add(new THREE.ArrowHelper(vDir, tMesh.position, Math.min(2.2, Math.abs(vy) * 0.35), 0x00f59b, 0.32, 0.18));
+    }
+    if (document.getElementById('chk-part-acc').checked && Math.abs(ay) > 0.05) {
+      const aDir = new THREE.Vector3(0, Math.sign(ay), 0);
+      waveGroup.add(new THREE.ArrowHelper(aDir, tMesh.position, Math.min(2.2, Math.abs(ay) * 0.12), 0xffbe0b, 0.32, 0.18));
+    }
+  }
+}
+
+// 4A. Module 1 & 3: Single Progressive Wave + 2D/3D Surface Option + Phase Crest Tracker
+function renderSingleProgressiveWave3D() {
+  const k = getWaveNumK();
+  const omega = getOmega();
+  const phi = degToRad(state.phi1Deg);
+  const s = state.propSign;
+
+  if (state.dimMode === '2D') {
+    // 2D Surface Ripple z(x, y, t)
+    const N = 56, L = 6;
+    const verts = [], inds = [];
+    for (let i = 0; i <= N; i++) {
+      const x = -L + (2 * L * i) / N;
+      for (let j = 0; j <= N; j++) {
+        const z = -L + (2 * L * j) / N;
+        const y = state.A * 0.6 * Math.sin(k * x - s * omega * state.t + phi);
+        verts.push(x, y, z);
+      }
+    }
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        const a = i * (N + 1) + j, b = (i + 1) * (N + 1) + j, c = (i + 1) * (N + 1) + (j + 1), d = i * (N + 1) + (j + 1);
+        inds.push(a, b, d, b, c, d);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setIndex(inds);
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    geo.computeVertexNormals();
+    waveGroup.add(new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ color: 0x00d2ff, side: THREE.DoubleSide, wireframe: true })));
+    return;
+  }
+
+  const evalY = (x, tNow = state.t) => state.A * Math.sin(k * x - s * omega * tNow + phi);
+  drawBeadWave3D(evalY, 0, 0x00d2ff, true);
+
+  // Moving Constant-Phase Crest Marker (kx - s*ωt + φ = π/2)
+  if (document.getElementById('chk-wave-crest').checked) {
+    const lam = getLambda();
+    let xCrest = ((Math.PI / 2 - phi + s * omega * state.t) / k) % lam;
+    if (xCrest > 6.5) xCrest -= lam;
+    if (xCrest < -6.5) xCrest += lam;
+    const cPos = new THREE.Vector3(xCrest, state.A, 0);
+    waveGroup.add(new THREE.ArrowHelper(new THREE.Vector3(s, 0, 0), cPos, 1.4, 0xffbe0b, 0.35, 0.2));
+    const cLbl = makeTextSprite(`Wave Speed v = ${state.v.toFixed(1)} m/s`, '#ffbe0b', 0.78);
+    cLbl.position.set(xCrest, state.A + 0.55, 0);
+    labelsGroup.add(cLbl);
+  }
+}
+
+// 4B. Module 2: Transverse Wave vs. 3D Longitudinal Slinky / Compression Tube
+function renderTransverseAndLongitudinal3D() {
+  const k = getWaveNumK();
+  const omega = getOmega();
+  const phi = degToRad(state.phi1Deg);
+  const s = state.propSign;
+
+  const showTrans = state.tlSubmode === 'transverse' || state.tlSubmode === 'both';
+  const showLong = state.tlSubmode === 'longitudinal' || state.tlSubmode === 'both';
+  const yOffsetTrans = state.tlSubmode === 'both' ? 1.8 : 0;
+  const yOffsetLong = state.tlSubmode === 'both' ? -1.8 : 0;
+
+  if (showTrans) {
+    const evalY = (x, tNow = state.t) => yOffsetTrans + state.A * 0.75 * Math.sin(k * x - s * omega * tNow + phi);
+    drawBeadWave3D(evalY, 0, 0x00d2ff, true);
+    const tLbl = makeTextSprite('Transverse Wave: Particle Oscillation ⊥ Propagation', '#00d2ff', 0.85);
+    tLbl.position.set(-3.5, yOffsetTrans + state.A + 0.6, 0);
+    labelsGroup.add(tLbl);
+  }
+
+  if (showLong) {
+    // 3D Longitudinal Slinky Coils & Air-Molecule Planes: ξ(x,t) = A cos(kx - ωt + φ)
+    const numCoils = 48;
+    const L = 6.5;
+    const slinkyPts = [];
+    const totalTurns = 36;
+    const samples = 450;
+    for (let i = 0; i <= samples; i++) {
+      const frac = i / samples;
+      const xEq = -L + 2 * L * frac;
+      const xi = state.A * 0.55 * Math.cos(k * xEq - s * omega * state.t + phi);
+      const xDisp = xEq + xi;
+      const coilAng = frac * totalTurns * 2 * Math.PI;
+      slinkyPts.push(new THREE.Vector3(xDisp, yOffsetLong + 0.55 * Math.cos(coilAng), 0.55 * Math.sin(coilAng)));
+    }
+    waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(slinkyPts), new THREE.LineBasicMaterial({ color: 0x00f59b })));
+
+    // Highlight Tracked Longitudinal Particle oscillating horizontally around x0!
+    const x0 = state.trackX;
+    const xi0 = state.A * 0.55 * Math.cos(k * x0 - s * omega * state.t + phi);
+    const pLong = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 18), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
+    pLong.position.set(x0 + xi0, yOffsetLong, 0);
+    waveGroup.add(pLong);
+
+    const lLbl = makeTextSprite('Longitudinal Slinky: Compressions & Rarefactions (ξ ∥ v)', '#00f59b', 0.85);
+    lLbl.position.set(-3.0, yOffsetLong - 1.15, 0);
+    labelsGroup.add(lLbl);
+  }
+}
+
+// 4C. Module 4 & 5: Phase Difference & Two-Wave Superposition / Beats
+function renderTwoWaveSuperposition3D() {
+  const k1 = getWaveNumK();
+  const w1 = getOmega();
+  const phi1 = degToRad(state.phi1Deg);
+  const phi2 = degToRad(state.phi2Deg);
+  const s = state.propSign;
+
+  const f2 = (state.module === 'superpos' && state.superSubmode === 'beats') ? state.f2 : state.f;
+  const w2 = 2 * Math.PI * f2;
+  const k2 = w2 / state.v;
+
+  const evalY1 = (x, tNow = state.t) => state.A * Math.sin(k1 * x - s * w1 * tNow + phi1);
+  const evalY2 = (x, tNow = state.t) => state.A2 * Math.sin(k2 * x - s * w2 * tNow + phi2);
+  const evalSum = (x, tNow = state.t) => evalY1(x, tNow) + evalY2(x, tNow);
+
+  // Wave 1 (back z = -1.2), Wave 2 (middle z = 0), Resultant Sum y = y1 + y2 (front z = +1.2)
+  drawBeadWave3D(evalY1, -1.2, 0x00d2ff, false);
+  drawBeadWave3D(evalY2, 0.0, 0xffbe0b, false);
+  drawBeadWave3D(evalSum, 1.2, 0x00f59b, true);
+
+  const l1 = makeTextSprite('Wave y₁ (Cyan)', '#00d2ff', 0.75);
+  l1.position.set(-5.2, state.A + 0.6, -1.2);
+  const l2 = makeTextSprite('Wave y₂ (Amber)', '#ffbe0b', 0.75);
+  l2.position.set(-5.2, state.A2 + 0.6, 0);
+  const lSum = makeTextSprite('Resultant y = y₁ + y₂ (Green)', '#00f59b', 0.85);
+  lSum.position.set(0, state.A + state.A2 + 0.6, 1.2);
+  labelsGroup.add(l1, l2, lSum);
+}
+
+// 4D. Module 6: Standing Waves on Strings, Open Pipes & Closed Pipes
+function renderStandingWavesAndPipes3D() {
+  const L = state.stringLen;
+  const n = state.harmonicN;
+  const xStart = -L / 2;
+
+  // Wavelength λ_n depends on boundary condition:
+  // String (both ends fixed) or Open Pipe (both ends antinodes): L = n * (λ/2) => λ = 2L / n
+  // Closed Pipe (left end closed node, right end open antinode): L = (2n - 1) * (λ/4) => λ = 4L / (2n - 1)
+  const isClosedPipe = state.standType === 'closed_pipe';
+  const lam = isClosedPipe ? (4 * L) / (2 * n - 1) : (2 * L) / n;
+  const k = (2 * Math.PI) / lam;
+  const omega = k * state.v;
+
+  const evalStanding = (x, tNow = state.t) => {
+    const distFromLeft = x - xStart;
+    const spatial = state.standType === 'open_pipe' ? Math.cos(k * distFromLeft) : Math.sin(k * distFromLeft);
+    return 2 * state.A * 0.65 * spatial * Math.cos(omega * tNow);
+  };
+
+  drawBeadWave3D(evalStanding, 0, 0x00f59b, true);
+
+  // Draw Envelope ±2A sin(kx) & Mark All Nodes (N) and Antinodes (A)
+  const envPos = [], envNeg = [];
+  for (let i = 0; i <= 120; i++) {
+    const x = xStart + (L * i) / 120;
+    const dist = x - xStart;
+    const sp = state.standType === 'open_pipe' ? Math.cos(k * dist) : Math.sin(k * dist);
+    envPos.push(new THREE.Vector3(x, 2 * state.A * 0.65 * sp, 0));
+    envNeg.push(new THREE.Vector3(x, -2 * state.A * 0.65 * sp, 0));
+  }
+  waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(envPos), new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.2, gapSize: 0.15 })));
+  waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(envNeg), new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.2, gapSize: 0.15 })));
+
+  // Mark Displacement Nodes (Red Dots)
+  for (let m = 0; m <= n + 1; m++) {
+    const nodeDist = state.standType === 'open_pipe' ? (m + 0.5) * (lam / 2) : m * (lam / 2);
+    if (nodeDist <= L + 0.05) {
+      const nx = xStart + nodeDist;
+      const nd = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
+      nd.position.set(nx, 0, 0);
+      waveGroup.add(nd);
+      const nl = makeTextSprite('N', '#ff4d6d', 0.65);
+      nl.position.set(nx, -0.55, 0);
+      labelsGroup.add(nl);
+    }
+  }
+
+  // If Open or Closed Acoustic Pipe, draw translucent cylindrical pipe walls
+  if (state.standType !== 'string') {
+    const pipeGeo = new THREE.CylinderGeometry(1.4, 1.4, L, 32, 1, true);
+    pipeGeo.rotateZ(Math.PI / 2);
+    waveGroup.add(new THREE.Mesh(pipeGeo, new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.16, side: THREE.DoubleSide })));
+  }
+}
+
+// 4E. Module 7: 3D Electromagnetic Wave Polarization (E ⊥ B ⊥ k) & Malus's Law
+function renderEMPolarizationAndMalus3D() {
+  const k = getWaveNumK();
+  const omega = getOmega();
+  const th1 = degToRad(state.polAngle1Deg);
+  const th2 = degToRad(state.polAngle2Deg);
+
+  // Polarizer Disc 1 at x = -2.0, Analyzer Disc 2 at x = +2.5
+  const addPolarizerDisc = (xPos, angleRad, labelTxt, colHex) => {
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.12, 36), new THREE.MeshPhongMaterial({ color: colHex, transparent: true, opacity: 0.28 }));
+    ring.rotation.z = Math.PI / 2;
+    ring.position.set(xPos, 0, 0);
+    waveGroup.add(ring);
+
+    // Transmission axis grates
+    const axisDir = new THREE.Vector3(0, Math.cos(angleRad), Math.sin(angleRad));
+    waveGroup.add(new THREE.ArrowHelper(axisDir, new THREE.Vector3(xPos, 0, 0), 2.0, colHex, 0.35, 0.2));
+    const lbl = makeTextSprite(labelTxt, '#' + colHex.toString(16).padStart(6, '0'), 0.8);
+    lbl.position.set(xPos, 2.5, 0);
+    labelsGroup.add(lbl);
+  };
+
+  addPolarizerDisc(-2.0, th1, `Polarizer P₁ (${state.polAngle1Deg}°)`, 0x00d2ff);
+  if (state.useMiddlePolarizer) {
+    addPolarizerDisc(0.2, degToRad(state.polAngleMidDeg), `Mid Polarizer (${state.polAngleMidDeg}°)`, 0xffbe0b);
+  }
+  addPolarizerDisc(2.8, th2, `Analyzer P₂ (${state.polAngle2Deg}°)`, 0x00f59b);
+
+  // Draw Orthogonal E-field (Red) and B-field (Blue) vectors along x from -6.5 to +6.5
+  for (let x = -6.5; x <= 6.5; x += 0.35) {
+    const phase = k * x - omega * state.t;
+    let ampFactor = 1.0;
+    let curPolAngle = th1;
+
+    if (x > -2.0 && x <= 2.8) {
+      if (state.useMiddlePolarizer && x > 0.2) {
+        const thMid = degToRad(state.polAngleMidDeg);
+        ampFactor = Math.abs(Math.cos(thMid - th1));
+        curPolAngle = thMid;
+      }
+    } else if (x > 2.8) {
+      if (state.useMiddlePolarizer) {
+        const thMid = degToRad(state.polAngleMidDeg);
+        ampFactor = Math.abs(Math.cos(thMid - th1) * Math.cos(th2 - thMid));
+      } else {
+        ampFactor = Math.abs(Math.cos(th2 - th1));
+      }
+      curPolAngle = th2;
+    }
+
+    const E_mag = state.A * ampFactor * Math.sin(phase);
+    const ey = E_mag * Math.cos(curPolAngle);
+    const ez = (state.polType === 'circular' && x < -2.0)
+      ? state.A * Math.cos(phase)
+      : E_mag * Math.sin(curPolAngle);
+
+    // E-vector (Red) & perpendicular B-vector (Blue)
+    if (Math.hypot(ey, ez) > 0.08) {
+      const eVec = new THREE.Vector3(0, ey, ez);
+      waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, 0), new THREE.Vector3(x, ey, ez)]), new THREE.LineBasicMaterial({ color: 0xff4d6d })));
+      // B = (k̂ × E): for k̂ = (1,0,0), B is (0, -ez, ey)
+      waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, 0), new THREE.Vector3(x, -ez * 0.7, ey * 0.7)]), new THREE.LineBasicMaterial({ color: 0x38bdf8 })));
+    }
+  }
+}
+
+// 4F. Module 8: 3D Plane/Spherical Wavefronts & Single-Slit Diffraction
+function renderWavefrontsAndDiffraction3D() {
+  const lam = getLambda();
+  const a = state.slitWidthA;
+
+  if (state.wavefrontType === 'plane3d') {
+    for (let x = -5; x <= 5; x += lam * 0.5) {
+      const xShift = ((x + state.v * state.t) % 10) - 5;
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshPhongMaterial({ color: 0x00d2ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide }));
+      plane.rotation.y = Math.PI / 2;
+      plane.position.set(xShift, 0, 0);
+      waveGroup.add(plane);
+    }
+    waveGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-5, 0, 0), 10, 0xffbe0b, 0.6, 0.3));
+    return;
+  }
+
+  if (state.wavefrontType === 'spherical3d') {
+    for (let i = 1; i <= 5; i++) {
+      const rad = ((i * 1.2 + state.v * state.t) % 6.0) + 0.3;
+      const sph = new THREE.Mesh(new THREE.SphereGeometry(rad, 28, 20), new THREE.MeshBasicMaterial({ color: 0x00d2ff, wireframe: true, transparent: true, opacity: Math.max(0.1, 1 - rad / 6.5) }));
+      waveGroup.add(sph);
+    }
+    return;
+  }
+
+  // Single-Slit Diffraction Barrier at x = -1.5 with opening [-a/2, +a/2] along Z
+  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.5, 5), new THREE.MeshPhongMaterial({ color: 0x475569 }));
+  wallLeft.position.set(-1.5, 0, -2.5 - a / 2);
+  const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.5, 5), new THREE.MeshPhongMaterial({ color: 0x475569 }));
+  wallRight.position.set(-1.5, 0, 2.5 + a / 2);
+  waveGroup.add(wallLeft, wallRight);
+
+  // Incoming Plane Wavefronts (x < -1.5)
+  for (let k = 0; k < 4; k++) {
+    const wx = -6.0 + ((k * 1.1 + state.v * state.t) % 4.4);
+    waveGroup.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(wx, 0, -4.5), new THREE.Vector3(wx, 0, 4.5)]),
+      new THREE.LineBasicMaterial({ color: 0x00d2ff })
+    ));
+  }
+
+  // Diffracted cylindrical wavefront arcs + Screen Intensity Profile I(θ) = I0 (sin β / β)^2 at x = +4.5
+  const screenPts = [];
+  for (let z = -5.5; z <= 5.5; z += 0.1) {
+    const sinTheta = z / Math.hypot(6.0, z);
+    const beta = (Math.PI * a * sinTheta) / lam;
+    const intensity = Math.abs(beta) < 1e-4 ? 1.0 : Math.pow(Math.sin(beta) / beta, 2);
+    screenPts.push(new THREE.Vector3(4.5 + intensity * 2.2, intensity * 2.0, z));
+  }
+  waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(screenPts), new THREE.LineBasicMaterial({ color: 0x00f59b })));
+  const sLbl = makeTextSprite('Diffraction Intensity Pattern I(θ)', '#00f59b', 0.85);
+  sLbl.position.set(5.2, 2.5, 0);
+  labelsGroup.add(sLbl);
+}
+
+// 4G. Module 9: Doppler Effect, Boundary Reflection/Refraction & Dispersion Wave Packet
+function renderDopplerBoundaryDispersion3D() {
+  if (state.advTopic === 'doppler') {
+    const vSound = state.v;
+    const vs = state.dopplerVs;
+    const srcX = ((state.t * vs) % 8) - 4;
+
+    const srcMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 18), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
+    srcMesh.position.set(srcX, 0, 0);
+    waveGroup.add(srcMesh);
+
+    const obsMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 18), new THREE.MeshBasicMaterial({ color: 0x00f59b }));
+    obsMesh.position.set(5.2, 0, 0);
+    waveGroup.add(obsMesh);
+
+    for (let i = 1; i <= 7; i++) {
+      const age = ((state.t + i * 0.45) % 3.15);
+      const emitX = srcX - vs * age;
+      const rad = vSound * age;
+      const pts = [];
+      for (let a = 0; a <= 64; a++) {
+        const ang = (2 * Math.PI * a) / 64;
+        pts.push(new THREE.Vector3(emitX + rad * Math.cos(ang), 0, rad * Math.sin(ang)));
+      }
+      waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x00d2ff })));
+    }
+  } else if (state.advTopic === 'boundary') {
+    // Wave crossing boundary at x = 0 from v1 = state.v to v2 = state.boundaryV2 (Frequency f stays constant!)
+    const k1 = (2 * Math.PI * state.f) / state.v;
+    const k2 = (2 * Math.PI * state.f) / state.boundaryV2;
+    const w = getOmega();
+    const reflCoeff = (state.boundaryV2 - state.v) / (state.boundaryV2 + state.v);
+    const transCoeff = (2 * state.boundaryV2) / (state.boundaryV2 + state.v);
+
+    const evalBoundary = (x, tNow = state.t) => {
+      if (x <= 0) {
+        return state.A * 0.65 * Math.sin(k1 * x - w * tNow) + state.A * 0.65 * reflCoeff * Math.sin(-k1 * x - w * tNow);
+      } else {
+        return state.A * 0.65 * transCoeff * Math.sin(k2 * x - w * tNow);
+      }
+    };
+    drawBeadWave3D(evalBoundary, 0, 0x00d2ff, true);
+  } else {
+    // Dispersion Wave Packet: Phase Velocity v_p vs Group Velocity v_g
+    const k0 = getWaveNumK();
+    const w0 = getOmega();
+    const vp = state.v;
+    const vg = vp * state.dispGroupRatio;
+    const evalPacket = (x, tNow = state.t) => {
+      const env = Math.cos(0.45 * (x - vg * tNow));
+      const carrier = Math.sin(k0 * (x - vp * tNow));
+      return state.A * env * carrier;
+    };
+    drawBeadWave3D(evalPacket, 0, 0x00f59b, true);
+  }
+}
+
+function renderCustomEquationWave3D() {
+  const evalCustom = (x, tNow = state.t) => evaluateCustomWave(state.customEqStr, x, tNow);
+  drawBeadWave3D(evalCustom, 0, 0xa855f7, true);
+}
+
+/* ============================================================================
+   5. FOCUSED RIGHT-DRAWER CONTROLS & LIVE PHYSICS TABLES
+   ============================================================================ */
+function selectModule(mod) {
+  state.module = mod;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`tab-${mod}`);
+  if (btn) btn.classList.add('active');
+
+  document.getElementById('btn-audio-beats').style.display = (mod === 'superpos' || mod === 'doppler_disp') ? 'block' : 'none';
+
+  buildFocusedControls();
+  renderFrame(0);
+}
+
+function onCoupledParamChange(changedKey, newVal) {
+  if (changedKey === 'A') state.A = newVal;
+  else if (changedKey === 'f') {
+    state.f = newVal;
+    if (state.coupleConstraint === 'lam_fixed') {
+      state.v = state.f * state.initialSnap.lam;
+    }
+  } else if (changedKey === 'v') {
+    state.v = newVal;
+  } else if (changedKey === 'phi') {
+    state.phi1Deg = newVal;
+  }
+  buildFocusedControls();
+  renderFrame(0);
+}
+
+function buildFocusedControls() {
+  const sec = document.getElementById('focused-controls-sec');
+  const mod = state.module;
+
+  if (mod === 'whatis' || mod === 'params' || mod === 'trans_long') {
+    sec.innerHTML = `
+      <div class="sec-title"><span>2. Experiment Controls (Coupled v = fλ)</span></div>
+      ${mod === 'trans_long' ? `
+        <div style="display:flex; gap:4px; margin-bottom:8px;">
+          <button class="btn-sm ${state.tlSubmode==='transverse'?'active-toggle':''}" style="flex:1;" onclick="state.tlSubmode='transverse'; buildFocusedControls(); renderFrame(0)">Transverse</button>
+          <button class="btn-sm ${state.tlSubmode==='longitudinal'?'active-toggle':''}" style="flex:1;" onclick="state.tlSubmode='longitudinal'; buildFocusedControls(); renderFrame(0)">Longitudinal</button>
+          <button class="btn-sm ${state.tlSubmode==='both'?'active-toggle':''}" style="flex:1;" onclick="state.tlSubmode='both'; buildFocusedControls(); renderFrame(0)">Both</button>
+        </div>
+      ` : ''}
+      <div class="slider-row">
+        <div class="slider-head"><span>Amplitude (A)</span><span class="val">${state.A.toFixed(2)} m</span></div>
+        <input type="range" min="0.3" max="2.6" step="0.1" value="${state.A}" oninput="onCoupledParamChange('A', parseFloat(this.value))">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Frequency (f)</span><span class="val">${state.f.toFixed(2)} Hz</span></div>
+        <input type="range" min="0.2" max="1.8" step="0.05" value="${state.f}" oninput="onCoupledParamChange('f', parseFloat(this.value))">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Medium Wave Speed (v)</span><span class="val">${state.v.toFixed(2)} m/s</span></div>
+        <input type="range" min="1.2" max="7.5" step="0.2" value="${state.v}" oninput="onCoupledParamChange('v', parseFloat(this.value))">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Phase Constant (φ)</span><span class="val">${state.phi1Deg.toFixed(0)}°</span></div>
+        <input type="range" min="0" max="360" step="15" value="${state.phi1Deg}" oninput="onCoupledParamChange('phi', parseFloat(this.value))">
+      </div>
+    `;
+  } else if (mod === 'phase' || mod === 'superpos') {
+    const isBeats = mod === 'superpos' && state.superSubmode === 'beats';
+    sec.innerHTML = `
+      <div class="sec-title"><span>Phase &amp; Superposition Controls</span></div>
+      ${mod === 'superpos' ? `
+        <div style="display:flex; gap:5px; margin-bottom:8px;">
+          <button class="btn-sm ${state.superSubmode==='interfere'?'active-toggle':''}" style="flex:1;" onclick="state.superSubmode='interfere'; buildFocusedControls(); renderFrame(0)">Interference (Δφ)</button>
+          <button class="btn-sm ${state.superSubmode==='beats'?'active-toggle':''}" style="flex:1;" onclick="state.superSubmode='beats'; state.f2=state.f+0.15; buildFocusedControls(); renderFrame(0)">Beats (f₁ vs f₂)</button>
+        </div>
+      ` : ''}
+      <div class="slider-row">
+        <div class="slider-head"><span>Wave 2 Phase (φ₂) [Δφ = ${(state.phi2Deg - state.phi1Deg).toFixed(0)}°]</span><span class="val">${state.phi2Deg.toFixed(0)}°</span></div>
+        <input type="range" min="0" max="360" step="5" value="${state.phi2Deg}" oninput="state.phi2Deg=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Wave 2 Amplitude (A₂)</span><span class="val">${state.A2.toFixed(2)} m</span></div>
+        <input type="range" min="0.2" max="2.5" step="0.1" value="${state.A2}" oninput="state.A2=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+      ${isBeats ? `
+        <div class="slider-row">
+          <div class="slider-head"><span>Wave 2 Frequency (f₂) [f_beat = ${Math.abs(state.f2-state.f).toFixed(2)} Hz]</span><span class="val">${state.f2.toFixed(2)} Hz</span></div>
+          <input type="range" min="0.2" max="1.8" step="0.02" value="${state.f2}" oninput="state.f2=parseFloat(this.value); updateAudioFreqs(); buildFocusedControls(); renderFrame(0)">
+        </div>
+      ` : `
+        <div style="display:flex; gap:4px;">
+          <button class="btn-sm" style="flex:1;" onclick="state.phi2Deg=0; buildFocusedControls(); renderFrame(0)">0° (In-Phase)</button>
+          <button class="btn-sm" style="flex:1;" onclick="state.phi2Deg=90; buildFocusedControls(); renderFrame(0)">90°</button>
+          <button class="btn-sm" style="flex:1;" onclick="state.phi2Deg=180; buildFocusedControls(); renderFrame(0)">180° (Destr.)</button>
+        </div>
+      `}
+    `;
+  } else if (mod === 'standing') {
+    sec.innerHTML = `
+      <div class="sec-title"><span>Standing Waves &amp; Resonance</span></div>
+      <div style="display:flex; gap:4px; margin-bottom:8px;">
+        <button class="btn-sm ${state.standType==='string'?'active-toggle':''}" style="flex:1;" onclick="state.standType='string'; buildFocusedControls(); renderFrame(0)">Fixed String</button>
+        <button class="btn-sm ${state.standType==='open_pipe'?'active-toggle':''}" style="flex:1;" onclick="state.standType='open_pipe'; buildFocusedControls(); renderFrame(0)">Open Pipe</button>
+        <button class="btn-sm ${state.standType==='closed_pipe'?'active-toggle':''}" style="flex:1;" onclick="state.standType='closed_pipe'; buildFocusedControls(); renderFrame(0)">Closed Pipe</button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Harmonic Mode Number (n)</span><span class="val">n = ${state.harmonicN}</span></div>
+        <input type="range" min="1" max="6" step="1" value="${state.harmonicN}" oninput="state.harmonicN=parseInt(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Resonator Length (L)</span><span class="val">${state.stringLen.toFixed(1)} m</span></div>
+        <input type="range" min="6" max="14" step="1" value="${state.stringLen}" oninput="state.stringLen=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+    `;
+  } else if (mod === 'polar') {
+    sec.innerHTML = `
+      <div class="sec-title"><span>EM Polarization &amp; Malus's Law</span></div>
+      <div style="display:flex; gap:5px; margin-bottom:8px;">
+        <button class="btn-sm ${state.polType==='linear'?'active-toggle':''}" style="flex:1;" onclick="state.polType='linear'; buildFocusedControls(); renderFrame(0)">Linear</button>
+        <button class="btn-sm ${state.polType==='circular'?'active-toggle':''}" style="flex:1;" onclick="state.polType='circular'; buildFocusedControls(); renderFrame(0)">Circular</button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Polarizer P₁ Angle (θ₁)</span><span class="val">${state.polAngle1Deg}°</span></div>
+        <input type="range" min="0" max="180" step="5" value="${state.polAngle1Deg}" oninput="state.polAngle1Deg=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Analyzer P₂ Angle (θ₂)</span><span class="val">${state.polAngle2Deg}°</span></div>
+        <input type="range" min="0" max="180" step="5" value="${state.polAngle2Deg}" oninput="state.polAngle2Deg=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+      <label class="chk-lbl"><input type="checkbox" ${state.useMiddlePolarizer?'checked':''} onchange="state.useMiddlePolarizer=this.checked; buildFocusedControls(); renderFrame(0)"> Insert 3rd Middle Polarizer at 45°</label>
+    `;
+  } else if (mod === 'diffract') {
+    sec.innerHTML = `
+      <div class="sec-title"><span>Wavefronts &amp; Slit Diffraction</span></div>
+      <div style="display:flex; gap:4px; margin-bottom:8px;">
+        <button class="btn-sm ${state.wavefrontType==='plane3d'?'active-toggle':''}" style="flex:1;" onclick="state.wavefrontType='plane3d'; buildFocusedControls(); renderFrame(0)">3D Plane</button>
+        <button class="btn-sm ${state.wavefrontType==='spherical3d'?'active-toggle':''}" style="flex:1;" onclick="state.wavefrontType='spherical3d'; buildFocusedControls(); renderFrame(0)">Spherical</button>
+        <button class="btn-sm ${state.wavefrontType==='diffract'?'active-toggle':''}" style="flex:1;" onclick="state.wavefrontType='diffract'; buildFocusedControls(); renderFrame(0)">Slit Diffraction</button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Slit Aperture Width (a)</span><span class="val">${state.slitWidthA.toFixed(2)} m</span></div>
+        <input type="range" min="0.8" max="6.0" step="0.2" value="${state.slitWidthA}" oninput="state.slitWidthA=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Frequency (Changes λ = v/f)</span><span class="val">${state.f.toFixed(2)} Hz</span></div>
+        <input type="range" min="0.4" max="2.0" step="0.1" value="${state.f}" oninput="state.f=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+      </div>
+    `;
+  } else if (mod === 'doppler_disp') {
+    sec.innerHTML = `
+      <div class="sec-title"><span>Doppler, Boundary &amp; Dispersion</span></div>
+      <div style="display:flex; gap:4px; margin-bottom:8px;">
+        <button class="btn-sm ${state.advTopic==='doppler'?'active-toggle':''}" style="flex:1;" onclick="state.advTopic='doppler'; buildFocusedControls(); renderFrame(0)">Doppler</button>
+        <button class="btn-sm ${state.advTopic==='boundary'?'active-toggle':''}" style="flex:1;" onclick="state.advTopic='boundary'; buildFocusedControls(); renderFrame(0)">Boundary</button>
+        <button class="btn-sm ${state.advTopic==='dispersion'?'active-toggle':''}" style="flex:1;" onclick="state.advTopic='dispersion'; buildFocusedControls(); renderFrame(0)">v_p vs v_g</button>
+      </div>
+      ${state.advTopic === 'doppler' ? `
+        <div class="slider-row">
+          <div class="slider-head"><span>Source Speed (v_s) [Wave Speed v = ${state.v.toFixed(1)}]</span><span class="val">${state.dopplerVs.toFixed(2)} m/s</span></div>
+          <input type="range" min="0" max="3.2" step="0.1" value="${state.dopplerVs}" oninput="state.dopplerVs=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+        </div>
+      ` : state.advTopic === 'boundary' ? `
+        <div class="slider-row">
+          <div class="slider-head"><span>Medium 2 Wave Speed (v₂)</span><span class="val">${state.boundaryV2.toFixed(2)} m/s</span></div>
+          <input type="range" min="1.0" max="6.5" step="0.2" value="${state.boundaryV2}" oninput="state.boundaryV2=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+        </div>
+      ` : `
+        <div class="slider-row">
+          <div class="slider-head"><span>Group-to-Phase Ratio (v_g / v_p)</span><span class="val">${state.dispGroupRatio.toFixed(2)}</span></div>
+          <input type="range" min="0.2" max="1.6" step="0.1" value="${state.dispGroupRatio}" oninput="state.dispGroupRatio=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+        </div>
+      `}
+    `;
+  } else if (mod === 'custom_quiz') {
+    const ch = CHALLENGES[state.challengeIdx];
+    sec.innerHTML = `
+      <div class="sec-title"><span>Custom Wave Equation &amp; Challenges</span></div>
+      <label style="font-size:11px; color:var(--text-muted);">Safe Wave Expression y(x, t):</label>
+      <input type="text" value="${state.customEqStr}" oninput="state.customEqStr=this.value; renderFrame(0)">
+      <div class="formula-box" style="font-family:var(--font-sans); margin-top:6px;">
+        <strong>Challenge ${state.challengeIdx + 1}/${CHALLENGES.length}:</strong> ${ch.q}
+      </div>
+      ${ch.opts.map((o, idx) => `
+        <button class="btn-sm" style="width:100%; text-align:left; margin-bottom:4px;" onclick="checkWaveChallenge(${idx})">${o}</button>
+      `).join('')}
+      <div id="wave-chal-fb" style="display:none; font-size:11.5px; padding:6px; border-radius:4px; margin-top:4px;"></div>
+      <button class="btn-sm" style="width:100%; margin-top:4px;" onclick="state.challengeIdx=(state.challengeIdx+1)%CHALLENGES.length; buildFocusedControls()">Next Challenge ▶</button>
+    `;
+  }
+}
+
+function buildRightLiveTable() {
+  const box = document.getElementById('live-table-sec');
+  const lam = getLambda(), T = getPeriod(), w = getOmega(), k = getWaveNumK();
+  const snap = state.initialSnap;
+
+  if (state.module === 'polar') {
+    const dTheta = degToRad(state.polAngle2Deg - state.polAngle1Deg);
+    const transFrac = state.useMiddlePolarizer
+      ? Math.pow(Math.cos(degToRad(state.polAngleMidDeg - state.polAngle1Deg)) * Math.cos(degToRad(state.polAngle2Deg - state.polAngleMidDeg)), 2)
+      : Math.pow(Math.cos(dTheta), 2);
+    box.innerHTML = `
+      <table class="phys-table">
+        <thead><tr><th>Malus's Law Quantity</th><th>Formula</th><th>Live Value</th></tr></thead>
+        <tbody>
+          <tr><td>Polarizer Angle Δθ</td><td>θ₂ − θ₁</td><td class="num">${(state.polAngle2Deg - state.polAngle1Deg).toFixed(1)}°</td></tr>
+          <tr><td>Transmitted E-Field</td><td>E₀ |cos Δθ|</td><td class="num">${(Math.sqrt(transFrac)*100).toFixed(1)}% E₀</td></tr>
+          <tr><td>Transmitted Intensity</td><td>I = I₀ cos²(Δθ)</td><td class="num">${(transFrac*100).toFixed(1)}% I₀</td></tr>
+        </tbody>
+      </table>
+      <div class="formula-box">EM Wave: E ⊥ B ⊥ k̂ (Longitudinal sound cannot be polarized!)</div>
+    `;
+    return;
+  }
+
+  if (state.module === 'doppler_disp' && state.advTopic === 'doppler') {
+    const fApp = state.f * (state.v / Math.max(0.2, state.v - state.dopplerVs));
+    const fRec = state.f * (state.v / (state.v + state.dopplerVs));
+    box.innerHTML = `
+      <table class="phys-table">
+        <thead><tr><th>Doppler Quantity</th><th>Formula</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Source Frequency (f)</td><td>f₀</td><td class="num">${state.f.toFixed(2)} Hz</td></tr>
+          <tr><td>Approaching Freq (f')</td><td>f v / (v − v_s)</td><td class="num">${fApp.toFixed(2)} Hz</td></tr>
+          <tr><td>Receding Freq (f'')</td><td>f v / (v + v_s)</td><td class="num">${fRec.toFixed(2)} Hz</td></tr>
+          <tr><td>Compressed λ_front</td><td>(v − v_s) / f</td><td class="num">${((state.v - state.dopplerVs)/state.f).toFixed(2)} m</td></tr>
+        </tbody>
+      </table>
+    `;
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="phys-table">
+      <thead><tr><th>Wave Parameter</th><th>Initial</th><th>Current Live</th></tr></thead>
+      <tbody>
+        <tr><td>Amplitude (A)</td><td>${snap.A.toFixed(2)} m</td><td class="num">${state.A.toFixed(2)} m</td></tr>
+        <tr><td>Frequency (f = 1/T)</td><td>${snap.f.toFixed(2)} Hz</td><td class="num">${state.f.toFixed(2)} Hz</td></tr>
+        <tr><td>Wave Speed (v = fλ)</td><td>${snap.v.toFixed(2)} m/s</td><td class="num">${state.v.toFixed(2)} m/s</td></tr>
+        <tr><td>Wavelength (λ = v/f)</td><td>${snap.lam.toFixed(2)} m</td><td class="num">${lam.toFixed(2)} m</td></tr>
+        <tr><td>Time Period (T)</td><td>${snap.T.toFixed(2)} s</td><td class="num">${T.toFixed(2)} s</td></tr>
+        <tr><td>Angular Freq (ω = 2πf)</td><td>${snap.omega.toFixed(2)} rad/s</td><td class="num">${w.toFixed(2)} rad/s</td></tr>
+        <tr><td>Wave Number (k = 2π/λ)</td><td>${snap.k.toFixed(2)} m⁻¹</td><td class="num">${k.toFixed(2)} m⁻¹</td></tr>
+        <tr><td>Wave Intensity (I ∝ A²)</td><td>1.00 I₀</td><td class="num">${Math.pow(state.A / snap.A, 2).toFixed(2)} I₀</td></tr>
+      </tbody>
+    </table>
+    ${state.advancedMode ? `<div class="formula-box">y(x,t) = ${state.A.toFixed(1)} sin(${k.toFixed(2)}x ${state.propSign>0?'−':'+'} ${w.toFixed(2)}t + ${state.phi1Deg}°)</div>` : ''}
+  `;
+}
+
+/* ============================================================================
+   6. SYNCHRONIZED BOTTOM GRAPH + ROTATING PHASOR CIRCLE (PRIORITY FEATURE 2 & 3)
+   ============================================================================ */
+function drawBottomWaveGraph() {
+  const canvas = document.getElementById('wave-graph-canvas');
+  if (!canvas) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (w < 20 || h < 20) return;
+
+  if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  const isDay = state.dayMode;
+  ctx.fillStyle = isDay ? '#f8fafc' : '#080d18';
+  ctx.fillRect(0, 0, w, h);
+
+  // Reserve Left 155px inside the canvas for the Live Rotating Phasor Circle & Single-Particle SHM Box!
+  const phasorW = 155;
+  const padL = phasorW + 42, padR = 20, padT = 20, padB = 28;
+  const pw = w - padL - padR, ph = h - padT - padB;
+
+  const k = getWaveNumK(), omega = getOmega();
+  const phi1 = degToRad(state.phi1Deg), phi2 = degToRad(state.phi2Deg);
+  const s = state.propSign;
+
+  // 1. Draw Rotating Phasor Circle at Left of Canvas (Priority Feature 2)
+  const cx = phasorW / 2, cy = h / 2;
+  const radP = Math.min(54, h * 0.34);
+  ctx.strokeStyle = isDay ? '#cbd5e1' : '#223252';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(cx, cy, radP, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx - radP - 6, cy); ctx.lineTo(cx + radP + 6, cy); ctx.moveTo(cx, cy - radP - 6); ctx.lineTo(cx, cy + radP + 6); ctx.stroke();
+
+  const phase1AtTrack = k * state.trackX - s * omega * state.t + phi1;
+  const px1 = cx + radP * Math.cos(phase1AtTrack);
+  const py1 = cy - radP * Math.sin(phase1AtTrack);
+  ctx.strokeStyle = '#00d2ff'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px1, py1); ctx.stroke();
+  ctx.fillStyle = '#ff4d6d'; ctx.beginPath(); ctx.arc(px1, py1, 4.5, 0, Math.PI * 2); ctx.fill();
+
+  if (state.module === 'phase' || state.module === 'superpos') {
+    const phase2AtTrack = k * state.trackX - s * omega * state.t + phi2;
+    const px2 = cx + radP * Math.cos(phase2AtTrack);
+    const py2 = cy - radP * Math.sin(phase2AtTrack);
+    ctx.strokeStyle = '#ffbe0b'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px2, py2); ctx.stroke();
+  }
+  ctx.fillStyle = isDay ? '#334155' : '#94a3b8';
+  ctx.font = 'bold 10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Phasor at x₀=${state.trackX.toFixed(1)}m`, cx, h - 8);
+
+  // 2. Draw Main Synchronized Coordinate Grid
+  ctx.strokeStyle = isDay ? '#e2e8f0' : '#162238';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const sy = Math.round(padT + (ph * i) / 4) + 0.5;
+    ctx.beginPath(); ctx.moveTo(padL, sy); ctx.lineTo(padL + pw, sy); ctx.stroke();
+  }
+  for (let i = 0; i <= 6; i++) {
+    const sx = Math.round(padL + (pw * i) / 6) + 0.5;
+    ctx.beginPath(); ctx.moveTo(sx, padT); ctx.lineTo(sx, padT + ph); ctx.stroke();
+  }
+  ctx.strokeStyle = isDay ? '#94a3b8' : '#2e446e';
+  ctx.strokeRect(padL, padT, pw, ph);
+
+  const midY = padT + ph / 2;
+  const gMode = state.graphMode;
+
+  const plotFunction = (fn, col, lineW = 2.4, dashed = false) => {
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = lineW;
+    if (dashed) ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    for (let i = 0; i <= 180; i++) {
+      const u = i / 180;
+      const sx = padL + u * pw;
+      const val = fn(u);
+      const sy = Math.max(padT + 2, Math.min(padT + ph - 2, midY - val * (ph * 0.36)));
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  if (gMode === 'y_vs_x') {
+    plotFunction(u => {
+      const x = -6.0 + u * 12.0;
+      return (state.A * Math.sin(k * x - s * omega * state.t + phi1)) / 2.6;
+    }, '#00d2ff');
+
+    if (state.module === 'phase' || state.module === 'superpos') {
+      const w2 = state.superSubmode === 'beats' ? 2 * Math.PI * state.f2 : omega;
+      const k2 = w2 / state.v;
+      plotFunction(u => {
+        const x = -6.0 + u * 12.0;
+        return (state.A2 * Math.sin(k2 * x - s * w2 * state.t + phi2)) / 2.6;
+      }, '#ffbe0b', 1.8, true);
+
+      plotFunction(u => {
+        const x = -6.0 + u * 12.0;
+        return (state.A * Math.sin(k * x - s * omega * state.t + phi1) + state.A2 * Math.sin(k2 * x - s * w2 * state.t + phi2)) / 3.8;
+      }, '#00f59b', 2.6);
+    }
+
+    // Highlight Tracked Particle x0 on the graph!
+    const uTrack = (state.trackX + 6.0) / 12.0;
+    const tx = padL + uTrack * pw;
+    const ty = midY - ((state.A * Math.sin(phase1AtTrack)) / 2.6) * (ph * 0.36);
+    ctx.fillStyle = '#ff4d6d';
+    ctx.beginPath(); ctx.arc(tx, ty, 5.5, 0, Math.PI * 2); ctx.fill();
+  } else if (gMode === 'y_vs_t') {
+    plotFunction(u => {
+      const tVal = state.t - 4.0 + u * 4.0;
+      return (state.A * Math.sin(k * state.trackX - s * omega * tVal + phi1)) / 2.6;
+    }, '#ff4d6d');
+  } else if (gMode === 'va_vs_t') {
+    plotFunction(u => {
+      const tVal = state.t - 4.0 + u * 4.0;
+      return (-s * state.A * Math.cos(k * state.trackX - s * omega * tVal + phi1)) / 2.6;
+    }, '#00f59b');
+    plotFunction(u => {
+      const tVal = state.t - 4.0 + u * 4.0;
+      return (-state.A * Math.sin(k * state.trackX - s * omega * tVal + phi1)) / 2.6;
+    }, '#ffbe0b', 1.8, true);
+  } else if (gMode === 'pressure_vs_x') {
+    // Acoustic Pressure ΔP = -B ∂ξ/∂x is 90° out of phase with displacement ξ!
+    plotFunction(u => {
+      const x = -6.0 + u * 12.0;
+      return Math.cos(k * x - s * omega * state.t + phi1);
+    }, '#00d2ff', 2.0);
+    plotFunction(u => {
+      const x = -6.0 + u * 12.0;
+      return Math.sin(k * x - s * omega * state.t + phi1);
+    }, '#ff4d6d', 2.4);
+  } else {
+    // Single-Slit Diffraction Intensity I(θ) = I0 (sin β / β)^2
+    const lam = getLambda();
+    plotFunction(u => {
+      const sinTh = (u - 0.5) * 1.6;
+      const beta = (Math.PI * state.slitWidthA * sinTh) / lam;
+      const I = Math.abs(beta) < 1e-4 ? 1.0 : Math.pow(Math.sin(beta) / beta, 2);
+      return -1.0 + 2.2 * I;
+    }, '#00f59b', 2.6);
+  }
+
+  ctx.restore();
+}
+
+function initGraphClickEvents() {
+  const canvas = document.getElementById('wave-graph-canvas');
+  canvas.addEventListener('pointerdown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const padL = 197, padR = 20;
+    const pw = canvas.clientWidth - padL - padR;
+    if (x >= padL && x <= padL + pw) {
+      const u = (x - padL) / pw;
+      state.trackX = Math.round((-6.0 + u * 12.0) * 2) / 2;
+      document.getElementById('lbl-track-x').textContent = state.trackX.toFixed(1) + ' m';
+      renderFrame(0);
+    }
+  });
+}
+
+/* ============================================================================
+   7. WEBAUDIO BEATS SYNTHESIZER & STUDENT CHALLENGES
+   ============================================================================ */
+function toggleAudioSound() {
+  const btn = document.getElementById('btn-audio-beats');
+  if (!state.audioPlaying) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!state.audioCtx) state.audioCtx = new AudioContext();
+    state.osc1 = state.audioCtx.createOscillator();
+    state.osc2 = state.audioCtx.createOscillator();
+    const gain = state.audioCtx.createGain();
+    gain.gain.value = 0.08;
+    state.osc1.connect(gain);
+    state.osc2.connect(gain);
+    gain.connect(state.audioCtx.destination);
+    updateAudioFreqs();
+    state.osc1.start();
+    state.osc2.start();
+    state.audioPlaying = true;
+    btn.textContent = '🔇 Mute Audio Beats';
+    btn.classList.add('active-toggle');
+  } else {
+    if (state.osc1) state.osc1.stop();
+    if (state.osc2) state.osc2.stop();
+    state.audioPlaying = false;
+    btn.textContent = '🔊 Play Audible Sound / Beats';
+    btn.classList.remove('active-toggle');
+  }
+}
+
+function updateAudioFreqs() {
+  if (!state.audioPlaying || !state.osc1 || !state.osc2) return;
+  const baseHz = 280;
+  state.osc1.frequency.setValueAtTime(baseHz + state.f * 10, state.audioCtx.currentTime);
+  state.osc2.frequency.setValueAtTime(baseHz + state.f2 * 10, state.audioCtx.currentTime);
+}
+
+const CHALLENGES = [
+  { q: '1. If you double the frequency f of a wave while keeping the medium wave speed v constant, what happens to the wavelength λ = v/f?', opts: ['Wavelength doubles (2λ)', 'Wavelength halves (λ/2)', 'Wavelength stays unchanged'], a: 1, exp: 'Correct! Since v = fλ is fixed by the medium, doubling f cuts λ in half.' },
+  { q: '2. What phase difference Δφ between two identical waves travelling in the same direction produces complete destructive interference?', opts: ['0° (0 rad)', '90° (π/2 rad)', '180° (π rad)'], a: 2, exp: 'Correct! At Δφ = 180° (π rad), crests of Wave 1 align with troughs of Wave 2, cancelling out.' },
+  { q: '3. In a standing wave on a string of length L, what is the distance between two adjacent Nodes?', opts: ['λ / 2', 'λ / 4', 'λ'], a: 0, exp: 'Correct! Adjacent nodes are separated by exactly half a wavelength (λ/2), while a node and its nearest antinode are separated by λ/4.' },
+  { q: '4. When a wave passes from Medium 1 into a stationary Medium 2 where wave speed is slower, which wave quantity remains strictly unchanged?', opts: ['Wavelength λ', 'Wave speed v', 'Frequency f'], a: 2, exp: 'Correct! Frequency f is determined by the oscillating source and does not change across a stationary boundary.' },
+  { q: '5. Why can light waves be polarized using a polarizing filter while ordinary sound waves in air cannot?', opts: ['Light is a transverse wave (E ⊥ propagation), whereas sound in air is a longitudinal wave', 'Sound travels too fast', 'Sound has no frequency'], a: 0, exp: 'Correct! Only transverse waves have oscillation directions perpendicular to propagation that can be selectively filtered.' }
+];
+
+function checkWaveChallenge(idx) {
+  const ch = CHALLENGES[state.challengeIdx];
+  const fb = document.getElementById('wave-chal-fb');
+  fb.style.display = 'block';
+  if (idx === ch.a) {
+    state.challengeScore++;
+    fb.style.background = 'rgba(0, 245, 155, 0.16)';
+    fb.style.color = '#10b981';
+    fb.textContent = '✓ ' + ch.exp;
+  } else {
+    fb.style.background = 'rgba(255, 77, 109, 0.16)';
+    fb.style.color = '#ff4d6d';
+    fb.textContent = '✗ Not quite. ' + ch.exp;
+  }
+}
+
+/* ============================================================================
+   8. TOOLBAR, CAMERA PRESETS, DRAWER TOGGLES & ANIMATION LOOP
+   ============================================================================ */
+function setWaveDimension(dim) {
+  state.dimMode = dim;
+  document.getElementById('dim-1d').classList.toggle('active-toggle', dim === '1D');
+  document.getElementById('dim-2d').classList.toggle('active-toggle', dim === '2D');
+  document.getElementById('dim-3d').classList.toggle('active-toggle', dim === '3D');
+  if (dim === '1D') setCameraPreset('front2d');
+  else setCameraPreset('iso3d');
+  renderFrame(0);
+}
+
+function setCameraPreset(preset) {
+  controls.target.set(0, 0, 0);
+  if (preset === 'front2d') camera.position.set(0, 0, 18.5);
+  else if (preset === 'top') camera.position.set(0, 19.5, 0.01);
+  else camera.position.set(4.5, 4.5, 16.5);
+  controls.update();
+}
+
+function togglePlay() {
+  state.running = !state.running;
+  const btn = document.getElementById('btn-play');
+  btn.textContent = state.running ? '⏸ Pause' : '▶ Play';
+  btn.classList.toggle('active-toggle', state.running);
+}
+
+function toggleSlowMo() {
+  state.slowMo = !state.slowMo;
+  document.getElementById('btn-slow').classList.toggle('active-toggle', state.slowMo);
+}
+
+function stepTime(dtStep) {
+  state.running = false;
+  document.getElementById('btn-play').textContent = '▶ Play';
+  document.getElementById('btn-play').classList.remove('active-toggle');
+  state.t += dtStep;
+  renderFrame(0);
+}
+
+function toggleLevelMode() {
+  state.advancedMode = !state.advancedMode;
+  const btn = document.getElementById('btn-level');
+  btn.textContent = state.advancedMode ? 'Level: Advanced Mode' : 'Level: Beginner Mode';
+  btn.classList.toggle('active-toggle', state.advancedMode);
+  buildRightLiveTable();
+}
+
+function toggleDayNight() {
+  state.dayMode = !state.dayMode;
+  document.body.classList.toggle('day-mode', state.dayMode);
+  document.getElementById('btn-theme').textContent = state.dayMode ? '🌙 Dark Mode' : '☀️ Day / Light';
+  scene.background = new THREE.Color(state.dayMode ? 0xeef4fb : 0x050811);
+  buildReferenceAxes();
+  renderFrame(0);
+}
+
+function resetCurrentModule() {
+  state.A = 1.5;
+  state.f = 0.6;
+  state.v = 3.6;
+  state.phi1Deg = 0;
+  state.phi2Deg = 90;
+  state.trackX = 0;
+  buildFocusedControls();
+  renderFrame(0);
+}
+
+let lOpen = true, rOpen = true, bOpen = true;
+function toggleDrawer(which) {
+  if (which === 'left') {
+    lOpen = !lOpen;
+    document.getElementById('left-drawer').classList.toggle('closed', !lOpen);
+    document.getElementById('tab-left').classList.toggle('closed', !lOpen);
+    document.getElementById('tab-left').textContent = lOpen ? '◀ SETUP' : '▶ SETUP';
+    document.getElementById('btn-left-d').classList.toggle('active-toggle', lOpen);
+    document.getElementById('bottom-drawer').classList.toggle('expand-left', !lOpen);
+  } else if (which === 'right') {
+    rOpen = !rOpen;
+    document.getElementById('right-drawer').classList.toggle('closed', !rOpen);
+    document.getElementById('tab-right').classList.toggle('closed', !rOpen);
+    document.getElementById('tab-right').textContent = rOpen ? 'CONTROLS & TABLE ▶' : '◀ CONTROLS & TABLE';
+    document.getElementById('btn-right-d').classList.toggle('active-toggle', rOpen);
+    document.getElementById('bottom-drawer').classList.toggle('expand-right', !rOpen);
+  } else {
+    bOpen = !bOpen;
+    document.getElementById('bottom-drawer').classList.toggle('closed', !bOpen);
+    document.getElementById('tab-bottom').classList.toggle('closed', !bOpen);
+    document.getElementById('tab-bottom').textContent = bOpen ? '▼ SYNCHRONIZED GRAPH & PHASOR' : '▲ SYNCHRONIZED GRAPH & PHASOR';
+    document.getElementById('btn-bottom-d').classList.toggle('active-toggle', bOpen);
+  }
+  setTimeout(drawBottomWaveGraph, 260);
+}
+
+let lastT = performance.now();
+function animateLoop(now = performance.now()) {
+  requestAnimationFrame(animateLoop);
+  const dt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+
+  if (state.running) {
+    renderFrame(dt);
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initThreeJS();
+  selectModule('whatis');
+  animateLoop();
+});
+</script>
+</body>
+</html>
