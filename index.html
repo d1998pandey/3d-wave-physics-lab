@@ -53,7 +53,6 @@
     flex-direction: column;
   }
 
-  /* Header & Module Tabs */
   header {
     background: var(--header-bg);
     border-bottom: 1px solid var(--panel-border);
@@ -129,7 +128,6 @@
     color: var(--accent);
   }
 
-  /* Main Workspace */
   .app-body {
     flex: 1;
     position: relative;
@@ -145,7 +143,6 @@
     z-index: 1;
   }
 
-  /* Slide-Out Drawers */
   .left-drawer {
     position: absolute;
     top: 0;
@@ -169,7 +166,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 350px;
+    width: 355px;
     background: var(--panel-bg);
     backdrop-filter: blur(12px);
     border-left: 1px solid var(--panel-border);
@@ -185,7 +182,7 @@
   .bottom-drawer {
     position: absolute;
     left: 305px;
-    right: 350px;
+    right: 355px;
     bottom: 0;
     height: 225px;
     background: var(--panel-bg);
@@ -200,7 +197,6 @@
   .bottom-drawer.expand-left { left: 0; }
   .bottom-drawer.expand-right { right: 0; }
 
-  /* Drawer Handle Tabs */
   .drawer-tab-left {
     position: absolute;
     top: 45%;
@@ -225,7 +221,7 @@
   .drawer-tab-right {
     position: absolute;
     top: 45%;
-    right: 350px;
+    right: 355px;
     transform: translateY(-50%);
     background: var(--card-bg);
     border: 1px solid var(--accent);
@@ -279,7 +275,6 @@
     align-items: center;
   }
 
-  /* Compact Sliders & Selectors */
   .slider-row {
     display: flex;
     flex-direction: column;
@@ -328,7 +323,6 @@
     cursor: pointer;
   }
 
-  /* Structured Physics Tables */
   .phys-table {
     width: 100%;
     border-collapse: collapse;
@@ -386,13 +380,12 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   }
 
-  /* Bottom Synchronized Graph + Phasor Circle Layout */
   .bottom-layout {
     flex: 1;
     min-height: 0;
     height: 100%;
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 225px 1fr;
     gap: 12px;
     padding: 10px 14px;
     overflow: hidden;
@@ -421,7 +414,7 @@
   <div class="header-top">
     <div class="brand">
       <span>INTERACTIVE 3D WAVE PHYSICS LABORATORY</span>
-      <span class="sub">Particle Tracking, Phasors, Superposition, Standing Waves, Polarization, Diffraction &amp; Doppler</span>
+      <span class="sub">Particle Tracking, Phasors, Superposition, Standing Waves, Polarization, Huygens Wavelets &amp; Diffraction</span>
     </div>
     <div style="display:flex; gap:5px; align-items:center;">
       <button class="btn-sm active-toggle" id="btn-level" onclick="toggleLevelMode()">Level: Advanced Mode</button>
@@ -442,7 +435,7 @@
     <button class="tab-btn" id="tab-superpos" onclick="selectModule('superpos')">5. Superposition &amp; Beats</button>
     <button class="tab-btn" id="tab-standing" onclick="selectModule('standing')">6. Standing Waves &amp; Pipes</button>
     <button class="tab-btn" id="tab-polar" onclick="selectModule('polar')">7. EM Polarization &amp; Malus's Law</button>
-    <button class="tab-btn" id="tab-diffract" onclick="selectModule('diffract')">8. Wavefronts &amp; Diffraction</button>
+    <button class="tab-btn" id="tab-diffract" onclick="selectModule('diffract')">8. Wavefronts, Wavelets &amp; Diffraction</button>
     <button class="tab-btn" id="tab-doppler_disp" onclick="selectModule('doppler_disp')">9. Doppler, Boundary &amp; Dispersion</button>
     <button class="tab-btn" id="tab-custom_quiz" onclick="selectModule('custom_quiz')">10. Custom Equation &amp; Challenges</button>
   </div>
@@ -479,7 +472,7 @@
         <label class="chk-lbl"><input type="checkbox" id="chk-part-vel" checked onchange="renderFrame(0)"> Particle Vel (v_y)</label>
         <label class="chk-lbl"><input type="checkbox" id="chk-part-acc" onchange="renderFrame(0)"> Particle Acc (a_y)</label>
         <label class="chk-lbl"><input type="checkbox" id="chk-wave-crest" checked onchange="renderFrame(0)"> Phase Crest Tracker</label>
-        <label class="chk-lbl"><input type="checkbox" id="chk-energy-flow" checked onchange="renderFrame(0)"> Energy Packets</label>
+        <label class="chk-lbl"><input type="checkbox" id="chk-huygens-wavelets" checked onchange="renderFrame(0)"> Secondary Wavelets</label>
       </div>
     </div>
 
@@ -505,7 +498,7 @@
     <span style="color:#64748b;">|</span>
     <button class="btn-sm" onclick="setCameraPreset('front2d')">📐 Front 2D View</button>
     <button class="btn-sm" onclick="setCameraPreset('iso3d')">🧊 3D Isometric</button>
-    <button class="btn-sm" onclick="setCameraPreset('top')">Top View</button>
+    <button class="btn-sm" onclick="setCameraPreset('top')">Top View (Best for Wavefronts)</button>
   </div>
 
   <div class="drawer-tab-right" id="tab-right" onclick="toggleDrawer('right')">CONTROLS &amp; TABLE ▶</div>
@@ -529,7 +522,7 @@
             <option value="y_vs_t">2. Tracked Particle y(x₀, t) vs Time t</option>
             <option value="va_vs_t">3. Particle Velocity v_y &amp; Accel a_y vs t</option>
             <option value="pressure_vs_x">4. Acoustic Pressure ΔP(x) vs Position x</option>
-            <option value="intensity">5. Intensity I ∝ A² / Diffraction Pattern</option>
+            <option value="intensity">5. Diffraction Screen Intensity I(θ)</option>
           </select>
           <p style="font-size:10.5px; color:var(--text-muted); line-height:1.38;">
             Click anywhere along the horizontal graph axis to move the red Tracked Particle $x_0$ directly to that location!
@@ -549,66 +542,57 @@
    1. GLOBAL WAVE PHYSICS STATE (COUPLED & PHYSICALLY CONSISTENT)
    ============================================================================ */
 const state = {
-  module: 'whatis',          // 'whatis'|'trans_long'|'params'|'phase'|'superpos'|'standing'|'polar'|'diffract'|'doppler_disp'|'custom_quiz'
-  dimMode: '3D',             // '1D' | '2D' | '3D'
+  module: 'whatis',
+  dimMode: '3D',
   advancedMode: true,
   dayMode: false,
   running: true,
   slowMo: false,
   t: 0,
-  propSign: 1,               // +1 for +x (kx - ωt), -1 for -x (kx + ωt)
+  propSign: 1,
 
-  // Core Coupled Wave 1 Parameters
-  A: 1.5,                    // Amplitude (m)
-  f: 0.6,                    // Frequency (Hz)
-  v: 3.6,                    // Wave propagation speed in medium (m/s) -> λ = v / f = 6.0 m
-  phi1Deg: 0,                // Phase constant φ₁ (deg)
-  coupleConstraint: 'v_fixed', // 'v_fixed' (changing f updates λ) | 'f_fixed' (changing v updates λ)
+  A: 1.5,
+  f: 0.6,
+  v: 3.6,
+  phi1Deg: 0,
+  coupleConstraint: 'v_fixed',
 
-  // Initial snapshot for Module 3 Parameter Comparison Table
   initialSnap: { A: 1.5, f: 0.6, v: 3.6, lam: 6.0, T: 1.67, omega: 3.77, k: 1.05 },
 
-  // Tracked Particle x0
   trackX: 0.0,
+  tlSubmode: 'both',
 
-  // Module 2: Transverse vs Longitudinal submode
-  tlSubmode: 'both',         // 'transverse' | 'longitudinal' | 'both'
-
-  // Module 4 & 5: Wave 2 Parameters (for Phase Difference, Superposition & Beats)
   A2: 1.5,
   f2: 0.6,
-  phi2Deg: 90,               // Phase difference Δφ = phi2Deg - phi1Deg
-  superSubmode: 'interfere', // 'interfere' | 'beats'
+  phi2Deg: 90,
+  superSubmode: 'interfere',
 
-  // Module 6: Standing Waves (String, Open Pipe, Closed Pipe)
-  standType: 'string',       // 'string' | 'open_pipe' | 'closed_pipe'
-  harmonicN: 3,              // Harmonic mode n (1, 2, 3, 4, 5...)
+  standType: 'string',
+  harmonicN: 3,
   stringLen: 12.0,
 
-  // Module 7: EM Wave Polarization & Malus's Law
-  polType: 'linear',         // 'linear' | 'circular' | 'elliptical' | 'unpolarized'
+  polType: 'linear',
   polAngle1Deg: 0,
   polAngle2Deg: 45,
   useMiddlePolarizer: false,
   polAngleMidDeg: 45,
 
-  // Module 8: Plane/Spherical Wavefronts & Single-Slit Diffraction
-  wavefrontType: 'diffract', // 'plane3d' | 'spherical3d' | 'diffract'
-  slitWidthA: 2.2,
+  // Upgraded Module 8: Wavefronts, Huygens Wavelets & Single-Slit Diffraction
+  wavefrontType: 'diffract',     // 'diffract' | 'huygens_plane' | 'huygens_spherical' | 'plane3d'
+  slitWidthA: 2.4,
+  numWaveletSources: 5,
+  showRippleSurface: true,
 
-  // Module 9: Doppler Effect, Medium Reflection/Refraction & Dispersion Wave Packet
-  advTopic: 'doppler',       // 'doppler' | 'boundary' | 'dispersion'
-  dopplerVs: 1.4,            // Source speed v_s
-  dopplerVo: 0.0,            // Observer speed v_o
-  dispGroupRatio: 0.55,      // v_g / v_p ratio
-  boundaryV2: 1.8,           // Speed in second medium for wave reflection/transmission
+  advTopic: 'doppler',
+  dopplerVs: 1.4,
+  dopplerVo: 0.0,
+  dispGroupRatio: 0.55,
+  boundaryV2: 1.8,
 
-  // Module 10: Custom Safe Equation & Student Challenges
   customEqStr: '2.0*sin(1.2*x - 3.5*t) + 0.8*cos(2.4*x - 7.0*t)',
   challengeIdx: 0,
   challengeScore: 0,
 
-  // Graph & Audio state
   graphMode: 'y_vs_x',
   audioCtx: null,
   osc1: null,
@@ -616,17 +600,12 @@ const state = {
   audioPlaying: false
 };
 
-// Coupled parameter getters
 function getLambda() { return state.v / Math.max(0.05, state.f); }
 function getPeriod() { return 1 / Math.max(0.05, state.f); }
 function getOmega() { return 2 * Math.PI * state.f; }
 function getWaveNumK() { return (2 * Math.PI) / getLambda(); }
 function degToRad(d) { return (d * Math.PI) / 180; }
 
-/* ============================================================================
-   2. SAFE MATHEMATICAL WAVE EXPRESSION EVALUATOR (MODULE 10)
-   Supports expressions like "2*sin(1.5*x - 3*t) + cos(3*x + 2*t + pi/4)"
-   ============================================================================ */
 function evaluateCustomWave(exprStr, xVal, tVal) {
   try {
     let s = String(exprStr).trim()
@@ -647,29 +626,29 @@ function evaluateCustomWave(exprStr, xVal, tVal) {
 }
 
 /* ============================================================================
-   3. THREE.JS 3D SCENE INITIALIZATION & PRIMITIVES
+   2. THREE.JS 3D SCENE INITIALIZATION & PRIMITIVES
    ============================================================================ */
 let scene, camera, renderer, controls;
 let waveGroup, axesGroup, labelsGroup;
 
 function makeTextSprite(text, colorStr = '#f8fafc', scale = 1.0) {
   const canvas = document.createElement('canvas');
-  canvas.width = 340;
-  canvas.height = 90;
+  canvas.width = 400;
+  canvas.height = 96;
   const ctx = canvas.getContext('2d');
-  ctx.font = 'bold 33px Inter, Consolas, sans-serif';
+  ctx.font = 'bold 32px Inter, Consolas, sans-serif';
   ctx.strokeStyle = state.dayMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 8, 17, 0.92)';
   ctx.lineWidth = 7;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.strokeText(text, 170, 45);
+  ctx.strokeText(text, 200, 48);
   ctx.fillStyle = state.dayMode && colorStr === '#f8fafc' ? '#0f172a' : colorStr;
-  ctx.fillText(text, 170, 45);
+  ctx.fillText(text, 200, 48);
 
   const tex = new THREE.CanvasTexture(canvas);
   const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
   const sp = new THREE.Sprite(mat);
-  sp.scale.set(2.4 * scale, 0.64 * scale, 1);
+  sp.scale.set(2.8 * scale, 0.68 * scale, 1);
   sp.renderOrder = 30;
   return sp;
 }
@@ -680,7 +659,7 @@ function initThreeJS() {
   scene.background = new THREE.Color(0x050811);
 
   camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 500);
-  camera.position.set(0, 3.8, 17.5);
+  camera.position.set(0, 4.2, 17.5);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -691,9 +670,9 @@ function initThreeJS() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-  const dl1 = new THREE.DirectionalLight(0xffffff, 0.8);
-  dl1.position.set(12, 18, 14);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const dl1 = new THREE.DirectionalLight(0xffffff, 0.85);
+  dl1.position.set(12, 22, 16);
   scene.add(dl1);
 
   axesGroup = new THREE.Group();
@@ -732,13 +711,13 @@ function buildReferenceAxes() {
     new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -3.5, 0), new THREE.Vector3(0, 3.5, 0)]),
     new THREE.LineBasicMaterial({ color: axCol })
   ));
-  const grid = new THREE.GridHelper(15, 15, state.dayMode ? 0xcbd5e1 : 0x1e293b, state.dayMode ? 0xe2e8f0 : 0x0f172a);
+  const grid = new THREE.GridHelper(16, 16, state.dayMode ? 0xcbd5e1 : 0x1e293b, state.dayMode ? 0xe2e8f0 : 0x0f172a);
   grid.position.y = -3.0;
   axesGroup.add(grid);
 }
 
 /* ============================================================================
-   4. 3D WAVE RENDERERS FOR ALL 10 MODULES
+   3. 3D WAVE RENDERERS FOR ALL 10 MODULES
    ============================================================================ */
 function renderFrame(dt) {
   if (state.running) {
@@ -771,7 +750,6 @@ function renderFrame(dt) {
   drawBottomWaveGraph();
 }
 
-// Helper: Draw a 3D Particle Bead Chain + Smooth Tube + Tracked Particle x0
 function drawBeadWave3D(evalYFn, zOffset, colorHex, showTracked = true) {
   const L = 6.5;
   const pts = [];
@@ -788,7 +766,6 @@ function drawBeadWave3D(evalYFn, zOffset, colorHex, showTracked = true) {
   );
   waveGroup.add(tube);
 
-  // Discrete medium particles every 0.5 m
   const sphereGeo = new THREE.SphereGeometry(0.11, 14, 14);
   const sphereMat = new THREE.MeshPhongMaterial({ color: colorHex });
   for (let x = -6.0; x <= 6.01; x += 0.5) {
@@ -798,7 +775,6 @@ function drawBeadWave3D(evalYFn, zOffset, colorHex, showTracked = true) {
     waveGroup.add(m);
   }
 
-  // Highlighted Tracked Particle at x = state.trackX (Priority Feature 1)
   if (showTracked) {
     const tx = state.trackX;
     const ty = evalYFn(tx);
@@ -806,7 +782,6 @@ function drawBeadWave3D(evalYFn, zOffset, colorHex, showTracked = true) {
     const vy = (evalYFn(tx, state.t + h) - evalYFn(tx, state.t - h)) / (2 * h);
     const ay = (evalYFn(tx, state.t + h) - 2 * ty + evalYFn(tx, state.t - h)) / (h * h);
 
-    // Vertical equilibrium guide line at x = tx
     const guideGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(tx, -state.A * 1.4, zOffset),
       new THREE.Vector3(tx, state.A * 1.4, zOffset)
@@ -832,7 +807,6 @@ function drawBeadWave3D(evalYFn, zOffset, colorHex, showTracked = true) {
   }
 }
 
-// 4A. Module 1 & 3: Single Progressive Wave + 2D/3D Surface Option + Phase Crest Tracker
 function renderSingleProgressiveWave3D() {
   const k = getWaveNumK();
   const omega = getOmega();
@@ -840,7 +814,6 @@ function renderSingleProgressiveWave3D() {
   const s = state.propSign;
 
   if (state.dimMode === '2D') {
-    // 2D Surface Ripple z(x, y, t)
     const N = 56, L = 6;
     const verts = [], inds = [];
     for (let i = 0; i <= N; i++) {
@@ -868,7 +841,6 @@ function renderSingleProgressiveWave3D() {
   const evalY = (x, tNow = state.t) => state.A * Math.sin(k * x - s * omega * tNow + phi);
   drawBeadWave3D(evalY, 0, 0x00d2ff, true);
 
-  // Moving Constant-Phase Crest Marker (kx - s*ωt + φ = π/2)
   if (document.getElementById('chk-wave-crest').checked) {
     const lam = getLambda();
     let xCrest = ((Math.PI / 2 - phi + s * omega * state.t) / k) % lam;
@@ -882,7 +854,6 @@ function renderSingleProgressiveWave3D() {
   }
 }
 
-// 4B. Module 2: Transverse Wave vs. 3D Longitudinal Slinky / Compression Tube
 function renderTransverseAndLongitudinal3D() {
   const k = getWaveNumK();
   const omega = getOmega();
@@ -903,8 +874,6 @@ function renderTransverseAndLongitudinal3D() {
   }
 
   if (showLong) {
-    // 3D Longitudinal Slinky Coils & Air-Molecule Planes: ξ(x,t) = A cos(kx - ωt + φ)
-    const numCoils = 48;
     const L = 6.5;
     const slinkyPts = [];
     const totalTurns = 36;
@@ -919,7 +888,6 @@ function renderTransverseAndLongitudinal3D() {
     }
     waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(slinkyPts), new THREE.LineBasicMaterial({ color: 0x00f59b })));
 
-    // Highlight Tracked Longitudinal Particle oscillating horizontally around x0!
     const x0 = state.trackX;
     const xi0 = state.A * 0.55 * Math.cos(k * x0 - s * omega * state.t + phi);
     const pLong = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 18), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
@@ -932,7 +900,6 @@ function renderTransverseAndLongitudinal3D() {
   }
 }
 
-// 4C. Module 4 & 5: Phase Difference & Two-Wave Superposition / Beats
 function renderTwoWaveSuperposition3D() {
   const k1 = getWaveNumK();
   const w1 = getOmega();
@@ -948,7 +915,6 @@ function renderTwoWaveSuperposition3D() {
   const evalY2 = (x, tNow = state.t) => state.A2 * Math.sin(k2 * x - s * w2 * tNow + phi2);
   const evalSum = (x, tNow = state.t) => evalY1(x, tNow) + evalY2(x, tNow);
 
-  // Wave 1 (back z = -1.2), Wave 2 (middle z = 0), Resultant Sum y = y1 + y2 (front z = +1.2)
   drawBeadWave3D(evalY1, -1.2, 0x00d2ff, false);
   drawBeadWave3D(evalY2, 0.0, 0xffbe0b, false);
   drawBeadWave3D(evalSum, 1.2, 0x00f59b, true);
@@ -962,15 +928,11 @@ function renderTwoWaveSuperposition3D() {
   labelsGroup.add(l1, l2, lSum);
 }
 
-// 4D. Module 6: Standing Waves on Strings, Open Pipes & Closed Pipes
 function renderStandingWavesAndPipes3D() {
   const L = state.stringLen;
   const n = state.harmonicN;
   const xStart = -L / 2;
 
-  // Wavelength λ_n depends on boundary condition:
-  // String (both ends fixed) or Open Pipe (both ends antinodes): L = n * (λ/2) => λ = 2L / n
-  // Closed Pipe (left end closed node, right end open antinode): L = (2n - 1) * (λ/4) => λ = 4L / (2n - 1)
   const isClosedPipe = state.standType === 'closed_pipe';
   const lam = isClosedPipe ? (4 * L) / (2 * n - 1) : (2 * L) / n;
   const k = (2 * Math.PI) / lam;
@@ -984,7 +946,6 @@ function renderStandingWavesAndPipes3D() {
 
   drawBeadWave3D(evalStanding, 0, 0x00f59b, true);
 
-  // Draw Envelope ±2A sin(kx) & Mark All Nodes (N) and Antinodes (A)
   const envPos = [], envNeg = [];
   for (let i = 0; i <= 120; i++) {
     const x = xStart + (L * i) / 120;
@@ -996,7 +957,6 @@ function renderStandingWavesAndPipes3D() {
   waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(envPos), new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.2, gapSize: 0.15 })));
   waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(envNeg), new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.2, gapSize: 0.15 })));
 
-  // Mark Displacement Nodes (Red Dots)
   for (let m = 0; m <= n + 1; m++) {
     const nodeDist = state.standType === 'open_pipe' ? (m + 0.5) * (lam / 2) : m * (lam / 2);
     if (nodeDist <= L + 0.05) {
@@ -1010,7 +970,6 @@ function renderStandingWavesAndPipes3D() {
     }
   }
 
-  // If Open or Closed Acoustic Pipe, draw translucent cylindrical pipe walls
   if (state.standType !== 'string') {
     const pipeGeo = new THREE.CylinderGeometry(1.4, 1.4, L, 32, 1, true);
     pipeGeo.rotateZ(Math.PI / 2);
@@ -1018,21 +977,18 @@ function renderStandingWavesAndPipes3D() {
   }
 }
 
-// 4E. Module 7: 3D Electromagnetic Wave Polarization (E ⊥ B ⊥ k) & Malus's Law
 function renderEMPolarizationAndMalus3D() {
   const k = getWaveNumK();
   const omega = getOmega();
   const th1 = degToRad(state.polAngle1Deg);
   const th2 = degToRad(state.polAngle2Deg);
 
-  // Polarizer Disc 1 at x = -2.0, Analyzer Disc 2 at x = +2.5
   const addPolarizerDisc = (xPos, angleRad, labelTxt, colHex) => {
     const ring = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.12, 36), new THREE.MeshPhongMaterial({ color: colHex, transparent: true, opacity: 0.28 }));
     ring.rotation.z = Math.PI / 2;
     ring.position.set(xPos, 0, 0);
     waveGroup.add(ring);
 
-    // Transmission axis grates
     const axisDir = new THREE.Vector3(0, Math.cos(angleRad), Math.sin(angleRad));
     waveGroup.add(new THREE.ArrowHelper(axisDir, new THREE.Vector3(xPos, 0, 0), 2.0, colHex, 0.35, 0.2));
     const lbl = makeTextSprite(labelTxt, '#' + colHex.toString(16).padStart(6, '0'), 0.8);
@@ -1046,7 +1002,6 @@ function renderEMPolarizationAndMalus3D() {
   }
   addPolarizerDisc(2.8, th2, `Analyzer P₂ (${state.polAngle2Deg}°)`, 0x00f59b);
 
-  // Draw Orthogonal E-field (Red) and B-field (Blue) vectors along x from -6.5 to +6.5
   for (let x = -6.5; x <= 6.5; x += 0.35) {
     const phase = k * x - omega * state.t;
     let ampFactor = 1.0;
@@ -1074,69 +1029,305 @@ function renderEMPolarizationAndMalus3D() {
       ? state.A * Math.cos(phase)
       : E_mag * Math.sin(curPolAngle);
 
-    // E-vector (Red) & perpendicular B-vector (Blue)
     if (Math.hypot(ey, ez) > 0.08) {
-      const eVec = new THREE.Vector3(0, ey, ez);
       waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, 0), new THREE.Vector3(x, ey, ez)]), new THREE.LineBasicMaterial({ color: 0xff4d6d })));
-      // B = (k̂ × E): for k̂ = (1,0,0), B is (0, -ez, ey)
       waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, 0), new THREE.Vector3(x, -ez * 0.7, ey * 0.7)]), new THREE.LineBasicMaterial({ color: 0x38bdf8 })));
     }
   }
 }
 
-// 4F. Module 8: 3D Plane/Spherical Wavefronts & Single-Slit Diffraction
+/* ============================================================================
+   UPGRADED MODULE 8: HUYGENS WAVEFRONTS, SECONDARY WAVELETS & SLIT DIFFRACTION
+   ============================================================================ */
+function makeTubeLine3D(points, radius, colorHex, opacity = 1.0) {
+  if (points.length < 2) return;
+  const curve = new THREE.CatmullRomCurve3(points);
+  const geo = new THREE.TubeGeometry(curve, Math.max(24, points.length * 2), radius, 8, false);
+  const mat = new THREE.MeshPhongMaterial({ color: colorHex, transparent: opacity < 0.99, opacity, shininess: 70 });
+  waveGroup.add(new THREE.Mesh(geo, mat));
+}
+
+function makeCircleArcPointsXZ(cx, cz, radius, angStart, angEnd, yVal = 0, steps = 48) {
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = angStart + ((angEnd - angStart) * i) / steps;
+    pts.push(new THREE.Vector3(cx + radius * Math.cos(a), yVal, cz + radius * Math.sin(a)));
+  }
+  return pts;
+}
+
 function renderWavefrontsAndDiffraction3D() {
-  const lam = getLambda();
+  const lam = Math.max(1.4, Math.min(4.2, getLambda() * 0.45));
   const a = state.slitWidthA;
+  const showWavelets = document.getElementById('chk-huygens-wavelets').checked;
+  const phaseFrac = ((state.v * state.t) / lam) % 1.0;
+  const waveletRadius = Math.max(0.15, phaseFrac * lam);
 
+  // MODE A: HUYGENS PRINCIPLE — PLANE WAVEFRONT + SECONDARY WAVELETS + NEW ENVELOPE
+  if (state.wavefrontType === 'huygens_plane') {
+    const xPrimary = -3.2;
+    const xNewEnvelope = xPrimary + waveletRadius;
+
+    // 1. Primary Wavefront (Cyan Bold Bar + Translucent Vertical Sheet)
+    makeTubeLine3D([new THREE.Vector3(xPrimary, 0, -4.5), new THREE.Vector3(xPrimary, 0, 4.5)], 0.075, 0x00d2ff, 1.0);
+    const sheet1 = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.8, 9.0),
+      new THREE.MeshPhongMaterial({ color: 0x00d2ff, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+    );
+    sheet1.rotation.z = Math.PI / 2;
+    sheet1.rotation.y = Math.PI / 2;
+    sheet1.position.set(xPrimary, 0, 0);
+    waveGroup.add(sheet1);
+
+    const lblP = makeTextSprite('Primary Wavefront (t = t₀)', '#00d2ff', 0.9);
+    lblP.position.set(xPrimary, 1.6, -2.5);
+    labelsGroup.add(lblP);
+
+    // 2. Secondary Point Sources along Primary Wavefront & Expanding Semicircular Wavelets
+    const nSrc = state.numWaveletSources;
+    for (let i = 0; i < nSrc; i++) {
+      const zPos = -3.6 + (7.2 * i) / Math.max(1, nSrc - 1);
+      // Glowing Yellow Huygens Point Source
+      const srcDot = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 18), new THREE.MeshBasicMaterial({ color: 0xffbe0b }));
+      srcDot.position.set(xPrimary, 0, zPos);
+      waveGroup.add(srcDot);
+
+      if (showWavelets) {
+        // Forward Semicircular Secondary Wavelet of radius r = v * Δt
+        const arcPts = makeCircleArcPointsXZ(xPrimary, zPos, waveletRadius, -Math.PI / 2, Math.PI / 2, 0.02, 40);
+        makeTubeLine3D(arcPts, 0.035, 0xffbe0b, 0.85);
+
+        // Ray / Wave vector k̂ arrow from source to new wavefront tangent point
+        waveGroup.add(new THREE.ArrowHelper(
+          new THREE.Vector3(1, 0, 0),
+          new THREE.Vector3(xPrimary, 0, zPos),
+          waveletRadius,
+          0xa855f7,
+          0.28,
+          0.16
+        ));
+      }
+    }
+
+    // 3. New Forward Envelope Wavefront (Green Tangent Line touching all secondary wavelets!)
+    makeTubeLine3D([new THREE.Vector3(xNewEnvelope, 0, -4.5), new THREE.Vector3(xNewEnvelope, 0, 4.5)], 0.085, 0x00f59b, 1.0);
+    const lblEnv = makeTextSprite(`New Tangential Envelope Wavefront (r = vΔt = ${waveletRadius.toFixed(2)}m)`, '#00f59b', 0.92);
+    lblEnv.position.set(xNewEnvelope + 0.8, 1.6, 1.5);
+    labelsGroup.add(lblEnv);
+
+    // Additional propagated historical wavefronts ahead
+    for (let m = 1; m <= 3; m++) {
+      const xAhead = xNewEnvelope + m * lam;
+      if (xAhead < 6.8) {
+        makeTubeLine3D([new THREE.Vector3(xAhead, 0, -4.5), new THREE.Vector3(xAhead, 0, 4.5)], 0.045, 0x00d2ff, 0.45);
+      }
+    }
+    return;
+  }
+
+  // MODE B: HUYGENS PRINCIPLE — SPHERICAL WAVEFRONT + SECONDARY WAVELETS
+  if (state.wavefrontType === 'huygens_spherical') {
+    const center = new THREE.Vector3(-4.5, 0, 0);
+    const centralDot = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
+    centralDot.position.copy(center);
+    waveGroup.add(centralDot);
+    const lblSrc = makeTextSprite('Point Source S', '#ff4d6d', 0.85);
+    lblSrc.position.set(center.x, 1.2, 0);
+    labelsGroup.add(lblSrc);
+
+    const rPrimary = 3.2;
+    const rNewEnv = rPrimary + waveletRadius;
+
+    // Primary Spherical Wavefront Arc
+    const primArc = makeCircleArcPointsXZ(center.x, center.z, rPrimary, -Math.PI * 0.42, Math.PI * 0.42, 0, 60);
+    makeTubeLine3D(primArc, 0.07, 0x00d2ff, 1.0);
+
+    // Secondary Huygens Point Sources on the Primary Spherical Wavefront
+    const nSrc = state.numWaveletSources;
+    for (let i = 0; i < nSrc; i++) {
+      const ang = -Math.PI * 0.34 + (Math.PI * 0.68 * i) / Math.max(1, nSrc - 1);
+      const sx = center.x + rPrimary * Math.cos(ang);
+      const sz = center.z + rPrimary * Math.sin(ang);
+
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffbe0b }));
+      dot.position.set(sx, 0, sz);
+      waveGroup.add(dot);
+
+      if (showWavelets) {
+        const wArc = makeCircleArcPointsXZ(sx, sz, waveletRadius, ang - Math.PI * 0.48, ang + Math.PI * 0.48, 0.02, 36);
+        makeTubeLine3D(wArc, 0.035, 0xffbe0b, 0.85);
+        const rayDir = new THREE.Vector3(Math.cos(ang), 0, Math.sin(ang));
+        waveGroup.add(new THREE.ArrowHelper(rayDir, new THREE.Vector3(sx, 0, sz), waveletRadius, 0xa855f7, 0.26, 0.15));
+      }
+    }
+
+    // New Forward Envelope Spherical Wavefront
+    const envArc = makeCircleArcPointsXZ(center.x, center.z, rNewEnv, -Math.PI * 0.42, Math.PI * 0.42, 0, 64);
+    makeTubeLine3D(envArc, 0.08, 0x00f59b, 1.0);
+    const lblE = makeTextSprite('New Spherical Envelope Wavefront', '#00f59b', 0.9);
+    lblE.position.set(center.x + rNewEnv, 1.5, 0);
+    labelsGroup.add(lblE);
+    return;
+  }
+
+  // MODE C: 3D PARALLEL PLANE WAVEFRONTS & WAVE VECTOR k
   if (state.wavefrontType === 'plane3d') {
-    for (let x = -5; x <= 5; x += lam * 0.5) {
-      const xShift = ((x + state.v * state.t) % 10) - 5;
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshPhongMaterial({ color: 0x00d2ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide }));
-      plane.rotation.y = Math.PI / 2;
-      plane.position.set(xShift, 0, 0);
-      waveGroup.add(plane);
+    for (let i = 0; i < 5; i++) {
+      const xPos = -5.5 + ((i * lam + state.v * state.t) % (5 * lam));
+      const pMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.2, 7.0),
+        new THREE.MeshPhongMaterial({ color: 0x00d2ff, transparent: true, opacity: 0.32, side: THREE.DoubleSide })
+      );
+      pMesh.rotation.y = Math.PI / 2;
+      pMesh.position.set(xPos, 0, 0);
+      waveGroup.add(pMesh);
+
+      const framePts = [
+        new THREE.Vector3(xPos, -2.1, -3.5), new THREE.Vector3(xPos, 2.1, -3.5),
+        new THREE.Vector3(xPos, 2.1, 3.5), new THREE.Vector3(xPos, -2.1, 3.5),
+        new THREE.Vector3(xPos, -2.1, -3.5)
+      ];
+      waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(framePts), new THREE.LineBasicMaterial({ color: 0x00d2ff })));
     }
-    waveGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-5, 0, 0), 10, 0xffbe0b, 0.6, 0.3));
+    waveGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-6, 0, 0), 12, 0xffbe0b, 0.65, 0.32));
+    const kLbl = makeTextSprite('Wave Vector k̂ (Rays ⊥ Plane Wavefronts, Spacing = λ)', '#ffbe0b', 0.95);
+    kLbl.position.set(0, 2.7, 0);
+    labelsGroup.add(kLbl);
     return;
   }
 
-  if (state.wavefrontType === 'spherical3d') {
-    for (let i = 1; i <= 5; i++) {
-      const rad = ((i * 1.2 + state.v * state.t) % 6.0) + 0.3;
-      const sph = new THREE.Mesh(new THREE.SphereGeometry(rad, 28, 20), new THREE.MeshBasicMaterial({ color: 0x00d2ff, wireframe: true, transparent: true, opacity: Math.max(0.1, 1 - rad / 6.5) }));
-      waveGroup.add(sph);
-    }
-    return;
-  }
+  // MODE D (DEFAULT): SINGLE-SLIT DIFFRACTION + HUYGENS SLIT WAVELETS + 3D RIPPLE SURFACE + SCREEN FRINGES
+  const slitX = -1.8;
+  const screenX = 5.0;
 
-  // Single-Slit Diffraction Barrier at x = -1.5 with opening [-a/2, +a/2] along Z
-  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.5, 5), new THREE.MeshPhongMaterial({ color: 0x475569 }));
-  wallLeft.position.set(-1.5, 0, -2.5 - a / 2);
-  const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.5, 5), new THREE.MeshPhongMaterial({ color: 0x475569 }));
-  wallRight.position.set(-1.5, 0, 2.5 + a / 2);
+  // 1. High-Contrast Slit Barrier Walls at x = -1.8 with aperture a
+  const wallLen = 5.5;
+  const wallMat = new THREE.MeshPhongMaterial({ color: 0x334155, shininess: 40 });
+  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.2, wallLen), wallMat);
+  wallLeft.position.set(slitX, 0, -wallLen / 2 - a / 2);
+  const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.2, wallLen), wallMat);
+  wallRight.position.set(slitX, 0, wallLen / 2 + a / 2);
   waveGroup.add(wallLeft, wallRight);
 
-  // Incoming Plane Wavefronts (x < -1.5)
-  for (let k = 0; k < 4; k++) {
-    const wx = -6.0 + ((k * 1.1 + state.v * state.t) % 4.4);
-    waveGroup.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(wx, 0, -4.5), new THREE.Vector3(wx, 0, 4.5)]),
-      new THREE.LineBasicMaterial({ color: 0x00d2ff })
-    ));
+  const lblSlit = makeTextSprite(`Slit Aperture a = ${a.toFixed(1)}m (λ = ${lam.toFixed(1)}m)`, '#f8fafc', 0.85);
+  lblSlit.position.set(slitX, 1.65, 0);
+  labelsGroup.add(lblSlit);
+
+  // 2. Incoming Incident Plane Wavefronts (Left of Slit: x from -6.8 to -1.8)
+  for (let m = 0; m < 4; m++) {
+    const wx = -6.8 + ((m * 1.25 + state.v * state.t * 0.8) % 5.0);
+    makeTubeLine3D([new THREE.Vector3(wx, 0, -4.8), new THREE.Vector3(wx, 0, 4.8)], 0.055, 0x00d2ff, 0.9);
   }
 
-  // Diffracted cylindrical wavefront arcs + Screen Intensity Profile I(θ) = I0 (sin β / β)^2 at x = +4.5
-  const screenPts = [];
-  for (let z = -5.5; z <= 5.5; z += 0.1) {
-    const sinTheta = z / Math.hypot(6.0, z);
-    const beta = (Math.PI * a * sinTheta) / lam;
-    const intensity = Math.abs(beta) < 1e-4 ? 1.0 : Math.pow(Math.sin(beta) / beta, 2);
-    screenPts.push(new THREE.Vector3(4.5 + intensity * 2.2, intensity * 2.0, z));
+  // 3. Huygens Secondary Wavelet Point Sources inside the Slit Opening [-a/2, +a/2]
+  const nSlitSrc = state.numWaveletSources;
+  const srcZList = [];
+  for (let i = 0; i < nSlitSrc; i++) {
+    const zS = nSlitSrc === 1 ? 0 : -a * 0.42 + (a * 0.84 * i) / (nSlitSrc - 1);
+    srcZList.push(zS);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffbe0b }));
+    dot.position.set(slitX, 0.05, zS);
+    waveGroup.add(dot);
+
+    // Individual Huygens Secondary Wavelets radiating from each slit point source
+    if (showWavelets) {
+      for (let wStep = 1; wStep <= 3; wStep++) {
+        const rWavelet = ((wStep * lam * 0.6 + state.v * state.t * 0.8) % (lam * 1.8));
+        if (rWavelet > 0.2) {
+          const wPts = makeCircleArcPointsXZ(slitX, zS, rWavelet, -Math.PI * 0.46, Math.PI * 0.46, 0.04, 32);
+          waveGroup.add(new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(wPts),
+            new THREE.LineBasicMaterial({ color: 0xffbe0b, transparent: true, opacity: 0.55 })
+          ));
+        }
+      }
+    }
   }
-  waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(screenPts), new THREE.LineBasicMaterial({ color: 0x00f59b })));
-  const sLbl = makeTextSprite('Diffraction Intensity Pattern I(θ)', '#00f59b', 0.85);
-  sLbl.position.set(5.2, 2.5, 0);
+
+  // 4. Diffracted Combined Wavefront Arcs (Right of Slit: spreading out with angular width ~ λ/a)
+  const spreadAngle = Math.min(Math.PI * 0.48, Math.max(0.32, (lam / a) * 0.95));
+  for (let m = 0; m < 5; m++) {
+    const rad = ((m * 1.35 + state.v * state.t * 0.8) % 6.75);
+    if (rad > 0.25) {
+      const arcPts = makeCircleArcPointsXZ(slitX, 0, rad, -spreadAngle, spreadAngle, 0.02, 48);
+      makeTubeLine3D(arcPts, 0.05, 0x00d2ff, Math.max(0.25, 1 - rad / 7.2));
+    }
+  }
+
+  // 5. Optional 3D Ripple-Tank Interference Surface (Superposing all Huygens sources in the slit!)
+  if (state.showRippleSurface) {
+    const nx = 44, nz = 54;
+    const verts = [], colors = [], inds = [];
+    const kVal = (2 * Math.PI) / lam;
+    const wVal = kVal * state.v * 0.8;
+
+    for (let i = 0; i <= nx; i++) {
+      const x = slitX + 0.2 + ((screenX - slitX - 0.4) * i) / nx;
+      for (let j = 0; j <= nz; j++) {
+        const z = -5.2 + (10.4 * j) / nz;
+        let sumY = 0;
+        srcZList.forEach(zs => {
+          const dist = Math.hypot(x - slitX, z - zs);
+          sumY += Math.sin(kVal * dist - wVal * state.t) / Math.sqrt(1 + dist * 0.6);
+        });
+        const yHeight = (sumY / srcZList.length) * 0.55;
+        verts.push(x, yHeight - 0.25, z);
+
+        const norm = Math.max(0, Math.min(1, (yHeight + 0.5) / 1.0));
+        const col = new THREE.Color().setHSL(0.54 - norm * 0.18, 0.9, 0.35 + norm * 0.35);
+        colors.push(col.r, col.g, col.b);
+      }
+    }
+    for (let i = 0; i < nx; i++) {
+      for (let j = 0; j < nz; j++) {
+        const p1 = i * (nz + 1) + j, p2 = (i + 1) * (nz + 1) + j;
+        const p3 = (i + 1) * (nz + 1) + (j + 1), p4 = i * (nz + 1) + (j + 1);
+        inds.push(p1, p2, p4, p2, p3, p4);
+      }
+    }
+    const surfGeo = new THREE.BufferGeometry();
+    surfGeo.setIndex(inds);
+    surfGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    surfGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    surfGeo.computeVertexNormals();
+    waveGroup.add(new THREE.Mesh(surfGeo, new THREE.MeshPhongMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })));
+  }
+
+  // 6. Observation Screen at x = +5.0 + Bold 3D Intensity Curve I(θ) = I₀ [sin(β)/β]²
+  const screenBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 2.6, 11.0),
+    new THREE.MeshPhongMaterial({ color: 0x0f172a, transparent: true, opacity: 0.75 })
+  );
+  screenBack.position.set(screenX, 0.3, 0);
+  waveGroup.add(screenBack);
+
+  const screenPts = [];
+  for (let z = -5.2; z <= 5.2; z += 0.08) {
+    const sinTheta = z / Math.hypot(screenX - slitX, z);
+    const beta = (Math.PI * a * sinTheta) / lam;
+    const I = Math.abs(beta) < 1e-4 ? 1.0 : Math.pow(Math.sin(beta) / beta, 2);
+    screenPts.push(new THREE.Vector3(screenX - 0.1, -0.8 + I * 2.4, z));
+  }
+  makeTubeLine3D(screenPts, 0.065, 0x00f59b, 1.0);
+
+  // Mark 1st-Order Minima positions (sin θ = ±λ/a) on the Screen
+  if (lam < a) {
+    const sinTheta1 = lam / a;
+    const zMin1 = (screenX - slitX) * Math.tan(Math.asin(Math.min(0.85, sinTheta1)));
+    if (zMin1 < 5.0) {
+      [-zMin1, zMin1].forEach(zm => {
+        const minDot = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 14), new THREE.MeshBasicMaterial({ color: 0xff4d6d }));
+        minDot.position.set(screenX - 0.1, -0.8, zm);
+        waveGroup.add(minDot);
+      });
+      const lblMin = makeTextSprite(`1st Minima: a sin θ = ±λ (θ = ${(Math.asin(sinTheta1)*180/Math.PI).toFixed(1)}°)`, '#ff4d6d', 0.8);
+      lblMin.position.set(screenX, -1.35, 0);
+      labelsGroup.add(lblMin);
+    }
+  }
+
+  const sLbl = makeTextSprite('Screen Intensity I(θ) = I₀ [sin(β)/β]²', '#00f59b', 0.9);
+  sLbl.position.set(screenX, 2.1, 0);
   labelsGroup.add(sLbl);
 }
 
@@ -1167,7 +1358,6 @@ function renderDopplerBoundaryDispersion3D() {
       waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x00d2ff })));
     }
   } else if (state.advTopic === 'boundary') {
-    // Wave crossing boundary at x = 0 from v1 = state.v to v2 = state.boundaryV2 (Frequency f stays constant!)
     const k1 = (2 * Math.PI * state.f) / state.v;
     const k2 = (2 * Math.PI * state.f) / state.boundaryV2;
     const w = getOmega();
@@ -1183,9 +1373,7 @@ function renderDopplerBoundaryDispersion3D() {
     };
     drawBeadWave3D(evalBoundary, 0, 0x00d2ff, true);
   } else {
-    // Dispersion Wave Packet: Phase Velocity v_p vs Group Velocity v_g
     const k0 = getWaveNumK();
-    const w0 = getOmega();
     const vp = state.v;
     const vg = vp * state.dispGroupRatio;
     const evalPacket = (x, tNow = state.t) => {
@@ -1212,6 +1400,15 @@ function selectModule(mod) {
   if (btn) btn.classList.add('active');
 
   document.getElementById('btn-audio-beats').style.display = (mod === 'superpos' || mod === 'doppler_disp') ? 'block' : 'none';
+
+  // Automatically set an elevated 3D view when opening Module 8 so Wavefronts, Wavelets & Screen are 100% clear!
+  if (mod === 'diffract') {
+    state.graphMode = 'intensity';
+    document.getElementById('sel-graph-mode').value = 'intensity';
+    controls.target.set(0.5, 0, 0);
+    camera.position.set(-2.5, 11.5, 13.5);
+    controls.update();
+  }
 
   buildFocusedControls();
   renderFrame(0);
@@ -1331,20 +1528,34 @@ function buildFocusedControls() {
     `;
   } else if (mod === 'diffract') {
     sec.innerHTML = `
-      <div class="sec-title"><span>Wavefronts &amp; Slit Diffraction</span></div>
-      <div style="display:flex; gap:4px; margin-bottom:8px;">
-        <button class="btn-sm ${state.wavefrontType==='plane3d'?'active-toggle':''}" style="flex:1;" onclick="state.wavefrontType='plane3d'; buildFocusedControls(); renderFrame(0)">3D Plane</button>
-        <button class="btn-sm ${state.wavefrontType==='spherical3d'?'active-toggle':''}" style="flex:1;" onclick="state.wavefrontType='spherical3d'; buildFocusedControls(); renderFrame(0)">Spherical</button>
-        <button class="btn-sm ${state.wavefrontType==='diffract'?'active-toggle':''}" style="flex:1;" onclick="state.wavefrontType='diffract'; buildFocusedControls(); renderFrame(0)">Slit Diffraction</button>
+      <div class="sec-title"><span>Wavefronts, Huygens Wavelets &amp; Diffraction</span></div>
+      <select onchange="state.wavefrontType=this.value; buildFocusedControls(); renderFrame(0)">
+        <option value="diffract" ${state.wavefrontType==='diffract'?'selected':''}>1. Single-Slit Diffraction + Huygens Wavelets</option>
+        <option value="huygens_plane" ${state.wavefrontType==='huygens_plane'?'selected':''}>2. Huygens Principle: Plane Wavefront &amp; Wavelets</option>
+        <option value="huygens_spherical" ${state.wavefrontType==='huygens_spherical'?'selected':''}>3. Huygens Principle: Spherical Wavefront &amp; Wavelets</option>
+        <option value="plane3d" ${state.wavefrontType==='plane3d'?'selected':''}>4. 3D Parallel Plane Wavefronts &amp; Wave Vector k̂</option>
+      </select>
+      ${state.wavefrontType === 'diffract' ? `
+        <div class="slider-row">
+          <div class="slider-head"><span>Slit Aperture Width (a)</span><span class="val">${state.slitWidthA.toFixed(2)} m</span></div>
+          <input type="range" min="0.8" max="5.5" step="0.2" value="${state.slitWidthA}" oninput="state.slitWidthA=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+        </div>
+        <div style="display:flex; gap:5px; margin-bottom:8px;">
+          <button class="btn-sm" style="flex:1;" onclick="state.slitWidthA=1.2; buildFocusedControls(); renderFrame(0)">Narrow Slit (a ≈ λ)</button>
+          <button class="btn-sm" style="flex:1;" onclick="state.slitWidthA=4.8; buildFocusedControls(); renderFrame(0)">Wide Slit (a ≫ λ)</button>
+        </div>
+      ` : ''}
+      <div class="slider-row">
+        <div class="slider-head"><span>Secondary Wavelet Sources (N)</span><span class="val">${state.numWaveletSources} sources</span></div>
+        <input type="range" min="3" max="9" step="2" value="${state.numWaveletSources}" oninput="state.numWaveletSources=parseInt(this.value); buildFocusedControls(); renderFrame(0)">
       </div>
       <div class="slider-row">
-        <div class="slider-head"><span>Slit Aperture Width (a)</span><span class="val">${state.slitWidthA.toFixed(2)} m</span></div>
-        <input type="range" min="0.8" max="6.0" step="0.2" value="${state.slitWidthA}" oninput="state.slitWidthA=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
+        <div class="slider-head"><span>Frequency (Changes Wavelength λ)</span><span class="val">${state.f.toFixed(2)} Hz</span></div>
+        <input type="range" min="0.4" max="1.6" step="0.1" value="${state.f}" oninput="state.f=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
       </div>
-      <div class="slider-row">
-        <div class="slider-head"><span>Frequency (Changes λ = v/f)</span><span class="val">${state.f.toFixed(2)} Hz</span></div>
-        <input type="range" min="0.4" max="2.0" step="0.1" value="${state.f}" oninput="state.f=parseFloat(this.value); buildFocusedControls(); renderFrame(0)">
-      </div>
+      ${state.wavefrontType === 'diffract' ? `
+        <label class="chk-lbl"><input type="checkbox" ${state.showRippleSurface?'checked':''} onchange="state.showRippleSurface=this.checked; renderFrame(0)"> Show 3D Ripple-Tank Interference Surface</label>
+      ` : ''}
     `;
   } else if (mod === 'doppler_disp') {
     sec.innerHTML = `
@@ -1393,6 +1604,28 @@ function buildRightLiveTable() {
   const box = document.getElementById('live-table-sec');
   const lam = getLambda(), T = getPeriod(), w = getOmega(), k = getWaveNumK();
   const snap = state.initialSnap;
+
+  if (state.module === 'diffract') {
+    const lamEff = Math.max(1.4, Math.min(4.2, lam * 0.45));
+    const ratio = lamEff / state.slitWidthA;
+    const min1Deg = ratio <= 1 ? (Math.asin(ratio) * 180 / Math.PI).toFixed(1) + '°' : 'None (Wide Spread, λ > a)';
+    box.innerHTML = `
+      <table class="phys-table">
+        <thead><tr><th>Huygens &amp; Diffraction</th><th>Relation</th><th>Live Value</th></tr></thead>
+        <tbody>
+          <tr><td>Effective Wavelength</td><td>λ = v / f</td><td class="num">${lamEff.toFixed(2)} m</td></tr>
+          <tr><td>Slit Aperture Width</td><td>a</td><td class="num">${state.slitWidthA.toFixed(2)} m</td></tr>
+          <tr><td>Diffraction Ratio</td><td>λ / a</td><td class="num">${ratio.toFixed(2)}</td></tr>
+          <tr><td>1st-Order Minima</td><td>a sin θ = ±1λ</td><td class="num">${min1Deg}</td></tr>
+          <tr><td>Huygens Sources</td><td>Secondary Wavelets</td><td class="num">${state.numWaveletSources} point sources</td></tr>
+        </tbody>
+      </table>
+      <div class="formula-box">
+        <strong>Huygens Principle:</strong> Every point on a primary wavefront (blue) acts as a source of spherical secondary wavelets (yellow) travelling at speed v. Their forward tangential envelope (green) forms the new wavefront!
+      </div>
+    `;
+    return;
+  }
 
   if (state.module === 'polar') {
     const dTheta = degToRad(state.polAngle2Deg - state.polAngle1Deg);
@@ -1449,7 +1682,7 @@ function buildRightLiveTable() {
 }
 
 /* ============================================================================
-   6. SYNCHRONIZED BOTTOM GRAPH + ROTATING PHASOR CIRCLE (PRIORITY FEATURE 2 & 3)
+   6. SYNCHRONIZED BOTTOM GRAPH + ROTATING PHASOR CIRCLE
    ============================================================================ */
 function drawBottomWaveGraph() {
   const canvas = document.getElementById('wave-graph-canvas');
@@ -1470,7 +1703,6 @@ function drawBottomWaveGraph() {
   ctx.fillStyle = isDay ? '#f8fafc' : '#080d18';
   ctx.fillRect(0, 0, w, h);
 
-  // Reserve Left 155px inside the canvas for the Live Rotating Phasor Circle & Single-Particle SHM Box!
   const phasorW = 155;
   const padL = phasorW + 42, padR = 20, padT = 20, padB = 28;
   const pw = w - padL - padR, ph = h - padT - padB;
@@ -1479,7 +1711,6 @@ function drawBottomWaveGraph() {
   const phi1 = degToRad(state.phi1Deg), phi2 = degToRad(state.phi2Deg);
   const s = state.propSign;
 
-  // 1. Draw Rotating Phasor Circle at Left of Canvas (Priority Feature 2)
   const cx = phasorW / 2, cy = h / 2;
   const radP = Math.min(54, h * 0.34);
   ctx.strokeStyle = isDay ? '#cbd5e1' : '#223252';
@@ -1506,7 +1737,6 @@ function drawBottomWaveGraph() {
   ctx.textAlign = 'center';
   ctx.fillText(`Phasor at x₀=${state.trackX.toFixed(1)}m`, cx, h - 8);
 
-  // 2. Draw Main Synchronized Coordinate Grid
   ctx.strokeStyle = isDay ? '#e2e8f0' : '#162238';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
@@ -1561,7 +1791,6 @@ function drawBottomWaveGraph() {
       }, '#00f59b', 2.6);
     }
 
-    // Highlight Tracked Particle x0 on the graph!
     const uTrack = (state.trackX + 6.0) / 12.0;
     const tx = padL + uTrack * pw;
     const ty = midY - ((state.A * Math.sin(phase1AtTrack)) / 2.6) * (ph * 0.36);
@@ -1582,7 +1811,6 @@ function drawBottomWaveGraph() {
       return (-state.A * Math.sin(k * state.trackX - s * omega * tVal + phi1)) / 2.6;
     }, '#ffbe0b', 1.8, true);
   } else if (gMode === 'pressure_vs_x') {
-    // Acoustic Pressure ΔP = -B ∂ξ/∂x is 90° out of phase with displacement ξ!
     plotFunction(u => {
       const x = -6.0 + u * 12.0;
       return Math.cos(k * x - s * omega * state.t + phi1);
@@ -1592,11 +1820,10 @@ function drawBottomWaveGraph() {
       return Math.sin(k * x - s * omega * state.t + phi1);
     }, '#ff4d6d', 2.4);
   } else {
-    // Single-Slit Diffraction Intensity I(θ) = I0 (sin β / β)^2
-    const lam = getLambda();
+    const lamEff = Math.max(1.4, Math.min(4.2, getLambda() * 0.45));
     plotFunction(u => {
       const sinTh = (u - 0.5) * 1.6;
-      const beta = (Math.PI * state.slitWidthA * sinTh) / lam;
+      const beta = (Math.PI * state.slitWidthA * sinTh) / lamEff;
       const I = Math.abs(beta) < 1e-4 ? 1.0 : Math.pow(Math.sin(beta) / beta, 2);
       return -1.0 + 2.2 * I;
     }, '#00f59b', 2.6);
@@ -1660,8 +1887,8 @@ function updateAudioFreqs() {
 
 const CHALLENGES = [
   { q: '1. If you double the frequency f of a wave while keeping the medium wave speed v constant, what happens to the wavelength λ = v/f?', opts: ['Wavelength doubles (2λ)', 'Wavelength halves (λ/2)', 'Wavelength stays unchanged'], a: 1, exp: 'Correct! Since v = fλ is fixed by the medium, doubling f cuts λ in half.' },
-  { q: '2. What phase difference Δφ between two identical waves travelling in the same direction produces complete destructive interference?', opts: ['0° (0 rad)', '90° (π/2 rad)', '180° (π rad)'], a: 2, exp: 'Correct! At Δφ = 180° (π rad), crests of Wave 1 align with troughs of Wave 2, cancelling out.' },
-  { q: '3. In a standing wave on a string of length L, what is the distance between two adjacent Nodes?', opts: ['λ / 2', 'λ / 4', 'λ'], a: 0, exp: 'Correct! Adjacent nodes are separated by exactly half a wavelength (λ/2), while a node and its nearest antinode are separated by λ/4.' },
+  { q: '2. According to Huygens Principle, how is the new position of a wavefront constructed after time Δt?', opts: ['By taking the forward common tangent envelope of all spherical secondary wavelets of radius r = vΔt emitted by points on the primary wavefront', 'By particles travelling forward with the wave', 'By straight rays only'], a: 0, exp: 'Correct! Every point on a primary wavefront acts as a source of secondary wavelets; their forward common tangent envelope forms the new wavefront.' },
+  { q: '3. In single-slit diffraction, what happens to the central bright maximum when the slit width a is narrowed so that a approaches λ?', opts: ['The central maximum becomes narrower', 'The central maximum spreads out wider (stronger diffraction bending)', 'Diffraction disappears'], a: 1, exp: 'Correct! Since sin θ = λ/a for the first minimum, decreasing slit width a increases θ, making the wave spread out much wider.' },
   { q: '4. When a wave passes from Medium 1 into a stationary Medium 2 where wave speed is slower, which wave quantity remains strictly unchanged?', opts: ['Wavelength λ', 'Wave speed v', 'Frequency f'], a: 2, exp: 'Correct! Frequency f is determined by the oscillating source and does not change across a stationary boundary.' },
   { q: '5. Why can light waves be polarized using a polarizing filter while ordinary sound waves in air cannot?', opts: ['Light is a transverse wave (E ⊥ propagation), whereas sound in air is a longitudinal wave', 'Sound travels too fast', 'Sound has no frequency'], a: 0, exp: 'Correct! Only transverse waves have oscillation directions perpendicular to propagation that can be selectively filtered.' }
 ];
@@ -1699,7 +1926,7 @@ function setCameraPreset(preset) {
   controls.target.set(0, 0, 0);
   if (preset === 'front2d') camera.position.set(0, 0, 18.5);
   else if (preset === 'top') camera.position.set(0, 19.5, 0.01);
-  else camera.position.set(4.5, 4.5, 16.5);
+  else camera.position.set(-2.0, 9.5, 15.0);
   controls.update();
 }
 
